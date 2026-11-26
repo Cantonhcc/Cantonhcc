@@ -55,7 +55,7 @@ export class Particles {
       if (p.twinkle && ((p.life * 12) | 0) % 2 === 0 && t < 0.6) continue;
       ctx.globalAlpha = t < 0.3 ? t / 0.3 : 1;
       ctx.fillStyle = p.color;
-      ctx.fillRect(Math.round(p.x - ox), Math.round(p.y - oy), p.size, p.size);
+      ctx.fillRect(p.x - ox, p.y - oy, p.size, p.size);
     }
     ctx.globalAlpha = 1;
   }
@@ -63,8 +63,6 @@ export class Particles {
 
 /** A four-point pixel sparkle, the game's signature "starlight shard" shape. */
 export function drawSparkle(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string, core = '#ffffff') {
-  x = Math.round(x);
-  y = Math.round(y);
   ctx.fillStyle = color;
   for (let i = 1; i <= r; i++) {
     ctx.fillRect(x - i, y, 1, 1);

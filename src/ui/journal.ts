@@ -67,7 +67,7 @@ export function openJournal(mapSource: HTMLCanvasElement | null, player: { x: nu
   for (const s of found) body.append(h('div', { class: 'jshard' }, h('p', {}, '✦ ' + s.text), sourceList([s.source])));
 
   body.append(h('div', { class: 'sources-head' }, 'Controls'),
-    h('p', { class: 'note' }, 'Move: arrow keys or WASD. Glide: hold Shift. Interact: E, Space or Enter. Journal: J. Sound: M. On a phone, use the stick and the buttons.'));
+    h('p', { class: 'note' }, 'Move: arrow keys or WASD. Moonboard: R. Map and travel: M. Interact: E, Space or Enter. Journal: J. Thruster: hold Shift. On a phone, use the stick and the buttons.'));
 
   const reset = h('button', { class: 'pbtn danger' }, 'Erase progress and restart');
   reset.addEventListener('click', () => {

@@ -1,11 +1,12 @@
 // Keyboard and touch input folded into one small interface.
-type Action = 'action' | 'journal' | 'back' | 'mute';
+type Action = 'action' | 'journal' | 'back' | 'mute' | 'ride' | 'map';
 
 const KEY_ACTION: Record<string, Action> = {
   KeyE: 'action', Space: 'action', Enter: 'action',
   KeyJ: 'journal', Tab: 'journal',
   Escape: 'back',
-  KeyM: 'mute',
+  KeyR: 'ride', KeyQ: 'ride',
+  KeyM: 'map',
 };
 
 class Input {

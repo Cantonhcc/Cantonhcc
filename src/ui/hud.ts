@@ -5,7 +5,10 @@ import { G } from '../game';
 import { audio } from '../engine/audio';
 import { input } from '../engine/input';
 import type { Shard, Station } from '../content/stations';
-import { totals } from '../progress';
+import { stationDone, totals } from '../progress';
+import { ACCENT } from '../art/palette';
+import { STATIONS } from '../content/stations';
+import { DOORS } from '../world/layout';
 import { $, esc, h } from './dom';
 
 export interface Label { id: string; x: number; y: number; text: string; sub?: string; color: string; done?: boolean; small?: boolean }
@@ -22,9 +25,16 @@ class Ui {
   panelOpen = false;
   dialogOpen = false;
   onJournal: () => void = () => {};
+  onMap: () => void = () => {};
+  onRide: () => void = () => {};
+  private outdoor = false;
 
   init() {
     $('btn-journal').addEventListener('click', () => this.onJournal());
+    $('btn-map').addEventListener('click', () => this.onMap());
+    $('minimap').addEventListener('click', () => this.onMap());
+    $('btn-ride').addEventListener('click', () => this.onRide());
+    $('t-ride').addEventListener('pointerdown', (e) => { e.preventDefault(); this.onRide(); });
     $('btn-sound').addEventListener('click', () => {
       audio.start();
       audio.toggleMute();
@@ -49,9 +59,50 @@ class Ui {
     this.lockUntil = performance.now() + ms;
   }
 
-  showHud(on: boolean) {
+  showHud(on: boolean, outdoor = false) {
+    this.outdoor = outdoor;
     $('hud').hidden = !on;
+    $('minimap-wrap').hidden = !on || !outdoor;
+    $('btn-ride').hidden = !outdoor;
+    $('btn-map').hidden = !outdoor;
+    $('t-ride').hidden = !outdoor;
     if (on && input.usedTouch) $('touch').hidden = false;
+  }
+  setRiding(on: boolean) {
+    $('btn-ride').classList.toggle('on', on);
+    $('t-ride').classList.toggle('on', on);
+  }
+  /** Redraws the corner mini-map: the surface, the stations and a blinking dot for the player. */
+  drawMinimap(ground: HTMLCanvasElement, px: number, py: number) {
+    const c = $('minimap') as HTMLCanvasElement;
+    const g = c.getContext('2d')!;
+    const w = c.width;
+    const hgt = c.height;
+    g.imageSmoothingEnabled = true;
+    g.drawImage(ground, 0, 0, w, hgt);
+    g.fillStyle = 'rgba(8,10,44,0.25)';
+    g.fillRect(0, 0, w, hgt);
+    const k = w / ground.width;
+    for (const s of STATIONS) {
+      const d = DOORS[s.id];
+      const x = Math.round(d.x * k);
+      const y = Math.round((d.y - 14) * k);
+      g.fillStyle = '#15172b';
+      g.fillRect(x - 4, y - 4, 9, 9);
+      g.fillStyle = ACCENT[s.id];
+      g.fillRect(x - 3, y - 3, 7, 7);
+      if (stationDone(s)) {
+        g.fillStyle = '#15172b';
+        g.fillRect(x - 1, y - 1, 3, 3);
+      }
+    }
+    const blink = Math.floor(performance.now() / 300) % 2 === 0;
+    const x = Math.round(px * k);
+    const y = Math.round(py * k);
+    g.fillStyle = '#15172b';
+    g.fillRect(x - 4, y - 4, 9, 9);
+    g.fillStyle = blink ? '#ffffff' : '#ff6b6b';
+    g.fillRect(x - 3, y - 3, 7, 7);
   }
   showTitle(on: boolean) {
     $('title').hidden = !on;
@@ -225,19 +276,6 @@ class Ui {
       if (this.dialogOpen) this.advanceDialog();
       else input.press('action');
     });
-    const boost = $('t-boost');
-    boost.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      input.touchBoost = true;
-      boost.classList.add('on');
-    });
-    const off = () => {
-      input.touchBoost = false;
-      boost.classList.remove('on');
-    };
-    boost.addEventListener('pointerup', off);
-    boost.addEventListener('pointercancel', off);
-    boost.addEventListener('pointerleave', off);
     window.addEventListener('touchstart', () => {
       if (!input.usedTouch) {
         input.usedTouch = true;

@@ -61,3 +61,29 @@ export function distToPaths(x: number, y: number): number {
   }
   return best;
 }
+
+/** Nearest point on any path: distance to it and how far along that path it lies. */
+export function nearestOnPaths(x: number, y: number): { d: number; t: number } {
+  let best = 1e9;
+  let bt = 0;
+  for (const path of PATHS) {
+    let acc = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      const [ax, ay] = path[i];
+      const [bx, by] = path[i + 1];
+      const dx = bx - ax;
+      const dy = by - ay;
+      const len2 = dx * dx + dy * dy || 1;
+      let k = ((x - ax) * dx + (y - ay) * dy) / len2;
+      k = k < 0 ? 0 : k > 1 ? 1 : k;
+      const d = Math.hypot(x - (ax + dx * k), y - (ay + dy * k));
+      const len = Math.sqrt(len2);
+      if (d < best) {
+        best = d;
+        bt = acc + k * len;
+      }
+      acc += len;
+    }
+  }
+  return { d: best, t: bt };
+}

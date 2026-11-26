@@ -22,10 +22,17 @@
         <span class="chip" id="chip-shards" title="Starlight shards found"><i class="ic shard"></i><b>0/16</b></span>
       </div>
       <div class="hud-right">
+        <button id="btn-ride" class="pbtn" hidden title="Ride the moonboard">Board <kbd>R</kbd></button>
+        <button id="btn-map" class="pbtn" hidden title="Open the map">Map <kbd>M</kbd></button>
         <button id="btn-journal" class="pbtn">Journal <kbd>J</kbd></button>
-        <button id="btn-sound" class="pbtn icon" aria-label="Sound on or off" title="Sound (M)">♪</button>
+        <button id="btn-sound" class="pbtn icon" aria-label="Sound on or off" title="Sound">♪</button>
       </div>
     </header>
+
+    <div id="minimap-wrap" hidden>
+      <canvas id="minimap" width="192" height="135" aria-label="Mini-map. Click to open the full map."></canvas>
+      <div class="minimap-cap">MAP <kbd>M</kbd></div>
+    </div>
 
     <div id="banner" hidden></div>
     <div id="prompt" hidden></div>
@@ -39,15 +46,21 @@
 
     <section id="title">
       <div class="title-inner">
-        <div class="title-kicker">An unofficial field trip through the Canton Network</div>
-        <h1 class="logo"><span>LUNAR</span><span>LEDGER</span></h1>
-        <p class="title-sub">Eight tiny museums on the Moon.<br />Every claim comes with its source.</p>
+        <div class="title-kicker"><span>An unofficial field trip through the Canton Network</span></div>
+        <h1 class="logo" aria-label="Lunar Ledger">
+          <span class="word gold" aria-hidden="true"><b style="--i:0">L</b><b style="--i:1">U</b><b style="--i:2">N</b><b style="--i:3">A</b><b style="--i:4">R</b></span>
+          <span class="word ice" aria-hidden="true"><b style="--i:5">L</b><b style="--i:6">E</b><b style="--i:7">D</b><b style="--i:8">G</b><b style="--i:9">E</b><b style="--i:10">R</b></span>
+        </h1>
+        <p class="title-sub">Eight tiny museums on the Moon. Every claim comes with its source.</p>
+      </div>
+      <div class="title-bottom">
         <div class="title-btns">
-          <button id="btn-start" class="pbtn primary big">Start</button>
+          <button id="btn-start" class="pbtn primary big"><span class="tri"></span><span id="btn-start-label">Start</span></button>
           <a class="pbtn big" href="/field-notes.html">Read the field notes</a>
         </div>
-        <p class="title-foot">Independent community research. Not affiliated with the Canton Foundation or Digital Asset.<br />Turn the sound on for the full effect.</p>
+        <p class="title-hint">press <kbd>Enter</kbd> to begin</p>
       </div>
+      <p class="title-foot">Independent community research. Not affiliated with the Canton Foundation or Digital Asset. Turn the sound on for the full effect.</p>
     </section>
 
     <div id="panel-root"></div>
@@ -55,7 +68,7 @@
     <div id="touch" hidden>
       <div id="stick"><div id="knob"></div></div>
       <div class="touch-btns">
-        <button id="t-boost" aria-label="Glide">GLIDE</button>
+        <button id="t-ride" aria-label="Ride the moonboard" hidden>BOARD</button>
         <button id="t-act" aria-label="Interact">A</button>
       </div>
     </div>

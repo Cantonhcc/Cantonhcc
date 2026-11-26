@@ -32,6 +32,7 @@ class Game {
   /** CSS pixels per game pixel. */
   zoom = 3;
   time = 0;
+  private dt = 1 / 60;
   scene: Scene | null = null;
   fx = new Particles();
   private tr: Transition | null = null;
@@ -46,29 +47,37 @@ class Game {
     window.addEventListener('resize', () => this.resize());
     let last = performance.now();
     const frame = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const raw = Math.min(0.05, (now - last) / 1000);
       last = now;
-      this.tick(dt);
+      // smooth out uneven frame times so movement does not stutter
+      this.dt = this.dt * 0.8 + raw * 0.2;
+      this.tick(this.dt);
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
   }
 
+  /** Device pixels per game pixel. Drawing at device resolution lets the camera move in sub-pixel steps without blur. */
+  zp = 3;
+
   resize() {
     const dpr = window.devicePixelRatio || 1;
-    const pw = window.innerWidth * dpr;
-    const ph = window.innerHeight * dpr;
-    const zp = Math.max(1, Math.round(Math.min(pw / 230, ph / 215)));
-    this.zoom = zp / dpr;
-    this.vw = Math.ceil(window.innerWidth / this.zoom);
-    this.vh = Math.ceil(window.innerHeight / this.zoom);
-    this.canvas.width = this.vw;
-    this.canvas.height = this.vh;
-    this.canvas.style.width = this.vw * this.zoom + 'px';
-    this.canvas.style.height = this.vh * this.zoom + 'px';
-    this.ctx.imageSmoothingEnabled = false;
+    const pw = Math.round(window.innerWidth * dpr);
+    const ph = Math.round(window.innerHeight * dpr);
+    this.zp = Math.max(1, Math.round(Math.min(pw / 230, ph / 215)));
+    this.zoom = this.zp / dpr;
+    this.vw = pw / this.zp;
+    this.vh = ph / this.zp;
+    this.canvas.width = pw;
+    this.canvas.height = ph;
+    this.canvas.style.width = window.innerWidth + 'px';
+    this.canvas.style.height = window.innerHeight + 'px';
     document.documentElement.style.setProperty('--zoom', String(this.zoom));
     for (const f of this.onResize) f();
+  }
+  /** Rounds a camera coordinate to the nearest device pixel so pixel art stays crisp. */
+  snap(v: number): number {
+    return Math.round(v * this.zp) / this.zp;
   }
 
   get busy(): boolean {
@@ -97,6 +106,8 @@ class Game {
   private tick(dt: number) {
     this.time += dt;
     const ctx = this.ctx;
+    ctx.setTransform(this.zp, 0, 0, this.zp, 0, 0);
+    ctx.imageSmoothingEnabled = false;
     if (this.scene) {
       this.scene.update(dt);
       this.scene.draw(ctx);

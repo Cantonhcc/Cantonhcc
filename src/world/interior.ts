@@ -7,6 +7,7 @@ import { Particles, drawSparkle } from '../engine/particles';
 import { ACCENT, SHARD_COLORS, StationId } from '../art/palette';
 import { DOOR_X0, DOOR_X1, ROOM_H, ROOM_W, Slot, WALL_H, makePedestal, paintRoom, slotsFor } from '../art/interior';
 import { iconCanvas } from '../art/icons';
+import { glow, vignette } from '../art/glow';
 import { makeCrate, makePlant } from '../art/sprites';
 import { Exhibit, STATIONS, Station } from '../content/stations';
 import { isSeen, markSeen, stationDone } from '../progress';
@@ -60,6 +61,7 @@ export class Interior implements Scene {
 
   enter() {
     ui.setLabels([]);
+    ui.showHud(true, false);
     ui.banner(this.station.name, this.station.tagline, this.accent);
   }
   leave() {
@@ -97,7 +99,7 @@ export class Interior implements Scene {
     p.frozen = locked;
     p.update(dt, this.solid, this.dust);
     this.dust.update(dt);
-    const k = Math.min(1, dt * 8);
+    const k = 1 - Math.exp(-dt * 9);
     this.camX += (this.target('x') - this.camX) * k;
     this.camY += (this.target('y') - this.camY) * k;
 
@@ -156,21 +158,28 @@ export class Interior implements Scene {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    const cx = Math.round(this.camX);
-    const cy = Math.round(this.camY);
+    const cx = G.snap(this.camX);
+    const cy = G.snap(this.camY);
     const t = G.time;
     ctx.fillStyle = '#070816';
     ctx.fillRect(0, 0, G.vw, G.vh);
     // a few stars outside the hull
     for (let i = 0; i < 40; i++) {
-      const x = (i * 97 + 13) % G.vw;
-      const y = (i * 61 + 29) % G.vh;
+      const x = (i * 97 + 13) % Math.ceil(G.vw);
+      const y = (i * 61 + 29) % Math.ceil(G.vh);
       if ((Math.floor(t * 2) + i) % 9 !== 0) {
         ctx.fillStyle = i % 3 ? '#3a3f6b' : '#6b7196';
         ctx.fillRect(x, y, 1, 1);
       }
     }
     ctx.drawImage(this.room, -cx, -cy);
+    // light from the window strip and the exhibits
+    glow(ctx, ROOM_W / 2 - cx, 22 - cy, 170, '#6f8cff', 0.22, 46);
+    for (const s of this.stands) {
+      const gy = s.slot.kind === 'wall' ? 60 : s.slot.y - 18;
+      glow(ctx, s.slot.x - cx, gy - cy, 42, this.accent, isSeen(s.ex.id) ? 0.18 : 0.34 + 0.08 * Math.sin(t * 3 + s.slot.x), 34);
+    }
+    this.player.drawLight(ctx, cx, cy);
 
     // wall screens
     for (const s of this.stands) {
@@ -192,7 +201,7 @@ export class Interior implements Scene {
       if (this.near === s) {
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 1;
-        ctx.strokeRect(x - 18.5, y - 1.5, 37, 28);
+        ctx.strokeRect(x - 18.5, y - 2.5, 37, 29);
       }
     }
 
@@ -228,5 +237,6 @@ export class Interior implements Scene {
     items.sort((a, b) => a.y - b.y);
     for (const it of items) it.draw();
     this.dust.draw(ctx, cx, cy);
+    vignette(ctx, G.vw, G.vh, 0.45);
   }
 }
