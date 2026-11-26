@@ -145,7 +145,7 @@ export class Title implements Scene {
       }
     }
     ctx.globalAlpha = 1;
-    ctx.drawImage(this.earth, Math.round(w * 0.78) - 30, Math.round(hgt * 0.2) - 30);
+    ctx.drawImage(this.earth, Math.round(w * 0.8) - 30, Math.round(hgt * (hgt > w ? 0.08 : 0.2)) - 30);
     if (this.horizon) {
       const lift = this.starting ? Math.round(this.warp * this.warp * 60) : 0;
       ctx.drawImage(this.horizon, 0, hgt - 70 + lift);
