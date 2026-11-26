@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Lunar Ledger: a pixel field trip through the Canton Network</title>
+  <meta name="description" content="Explore a tiny research base on the Moon. Eight pixel museums explain how the Canton Network works, who runs it and what is really live, with a source for every claim. Independent community research." />
+  <meta property="og:title" content="Lunar Ledger" />
+  <meta property="og:description" content="A pixel field trip through the Canton Network. Eight tiny museums on the Moon, with a source for every claim." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#070816" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23070816'/%3E%3Cpath d='M7 1h2v5h5v2H9v5H7V8H2V6h5z' fill='%23ffe27a'/%3E%3Crect x='7' y='6' width='2' height='2' fill='%23fff'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game" aria-label="Lunar Ledger game view"></canvas>
+    <div id="labels" aria-hidden="true"></div>
+
+    <header id="hud" hidden>
+      <div class="hud-left">
+        <span class="chip" id="chip-stamps" title="Stations stamped"><i class="ic stamp"></i><b>0/8</b></span>
+        <span class="chip" id="chip-shards" title="Starlight shards found"><i class="ic shard"></i><b>0/16</b></span>
+      </div>
+      <div class="hud-right">
+        <button id="btn-journal" class="pbtn">Journal <kbd>J</kbd></button>
+        <button id="btn-sound" class="pbtn icon" aria-label="Sound on or off" title="Sound (M)">♪</button>
+      </div>
+    </header>
+
+    <div id="banner" hidden></div>
+    <div id="prompt" hidden></div>
+    <div id="toasts" aria-live="polite"></div>
+
+    <div id="dialog" class="pixel-box" hidden>
+      <div id="dialog-name"></div>
+      <div id="dialog-text"></div>
+      <div class="dialog-next">▼</div>
+    </div>
+
+    <section id="title">
+      <div class="title-inner">
+        <div class="title-kicker">An unofficial field trip through the Canton Network</div>
+        <h1 class="logo"><span>LUNAR</span><span>LEDGER</span></h1>
+        <p class="title-sub">Eight tiny museums on the Moon.<br />Every claim comes with its source.</p>
+        <div class="title-btns">
+          <button id="btn-start" class="pbtn primary big">Start</button>
+          <a class="pbtn big" href="/field-notes.html">Read the field notes</a>
+        </div>
+        <p class="title-foot">Independent community research. Not affiliated with the Canton Foundation or Digital Asset.<br />Turn the sound on for the full effect.</p>
+      </div>
+    </section>
+
+    <div id="panel-root"></div>
+
+    <div id="touch" hidden>
+      <div id="stick"><div id="knob"></div></div>
+      <div class="touch-btns">
+        <button id="t-boost" aria-label="Glide">GLIDE</button>
+        <button id="t-act" aria-label="Interact">A</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
