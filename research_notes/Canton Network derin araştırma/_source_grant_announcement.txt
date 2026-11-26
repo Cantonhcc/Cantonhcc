@@ -1,0 +1,44 @@
+ Introducing the Canton Community Research Grants 
+ November 4, 2026 
+Independent research and education help the community understand the Canton Network. The Canton Foundation is launching a discretionary grant program to support that work.
+Across the ecosystem, community members are publishing research, explaining complex technical concepts, analyzing network activity, and helping others understand what’s being built on Canton.
+The Canton Foundation wants to support more of that work. The Canton Community Research Grants are a new initiative supporting independent research, education, and advocacy that advance public understanding of the Canton Network and its ecosystem.
+Beginning in November 2026, the Foundation expects to make up to 50,000 Canton Coin (CC) per month available for grants. The Foundation will decide, in its sole discretion, whether to make grants in any month, to whom, and in what amounts. It may award less than the full amount, or nothing, in any month.
+### Starting in November 2026
+The program begins with work published in November. Original research and educational content publicly published between November 1 and November 30, 2026 may be considered for grants made in connection with November.
+Program Terms and Conditions are expected to be published on or before November 15, 2026. The Terms and Conditions will govern the program, including eligibility, identity verification (KYC), sanctions screening, disclosure requirements, and how grants are made and paid. No grant will be made before the Terms and Conditions are published, and every grant will be subject to them.
+You don’t need to be a Canton Foundation member to be considered.
+Grants are denominated in Canton Coin, and their USD value may fluctuate.
+### What Kind of Work Fits?
+We’re looking for original, informative content that contributes to education, awareness, and informed discussion about the Canton Network and its ecosystem.
+Examples include:
+- Tokenomics and network economics: Research explaining Canton Coin, network activity, rewards, or economic mechanisms.
+- Technical research: Analysis of Canton architecture, privacy, interoperability, Daml, or network capabilities.
+- Institutional adoption and use cases: Research exploring tokenization, collateral, settlement, payments, or other financial workflows.
+- Ecosystem analysis: Independent research on applications, infrastructure, network adoption, or emerging opportunities.
+- Educational content: Articles or videos that make complex Canton concepts easier to understand.
+- Education and advocacy: Content that promotes informed discussion, explains the potential benefits and challenges of decentralized financial infrastructure, or helps broaden public understanding of Canton and its applications.
+These are examples, not restrictions. We welcome different perspectives, including thoughtful, constructive criticism supported by research.
+The goal is to support independent contributions that help others better understand the ecosystem, not to promote any particular viewpoint or require favorable coverage of Canton.
+Both written research and video content are eligible.
+### How Are Grants Made?
+Grant decisions are made by the Canton Foundation. At the start, a Foundation review panel will consider work brought to its attention, including work the Foundation identifies on its own.
+Factors the Foundation expects to consider include:
+- Research quality: Is the work accurate, original, informative, and supported by evidence?
+- Educational and community value: Does it help people better understand Canton, encourage informed discussion, or contribute useful insights?
+- Contribution to public understanding: Has the work reached and informed the community? Artificial or purchased engagement will be disregarded.
+These factors guide the Foundation’s judgment. They are not a scoring system, and the Foundation may weigh them, or consider other factors, as it sees fit. Grant decisions do not require a positive assessment of Canton or endorsement of any project, product, or organization.
+Before any grant is made, a prospective recipient must meet the eligibility requirements in the Terms and Conditions, including identity verification and sanctions screening, and must sign a grant agreement with the Foundation. The Foundation may decline to make a grant to anyone, for any reason, at any stage.
+The Foundation may highlight grant recipients and their work publicly.
+### How to Let Us Know About Your Work
+1. Publish your work. Your article, analysis, or video must be publicly published between November 1 and November 30, 2026.
+2. Share it. Post a link on X, tag @CantonFdn, and include #CantonResearchNov26.
+Work shared by December 4, 2026 will be reviewed in connection with November. Sharing is optional, because the Foundation may also consider work it finds on its own. Sharing your work does not create any right to a grant.
+Posts shared on X are public. If your work is under consideration, the Foundation will contact you privately about the Terms and Conditions, verification, and grant documentation.
+Please share only original content that you created or are authorized to represent. Please also disclose any relevant sponsorships, financial interests, or commercial relationships associated with your work.
+### What’s Next?
+November is the program’s first month. We’ll use what we learn to refine the program in future months, including how work is considered and how we can better support independent research, education, and advocacy across the ecosystem.
+We believe a well-informed community is essential to the continued development of the Canton ecosystem. Independent research, diverse perspectives, and constructive discussion all play an important role in helping people understand the opportunities and challenges of emerging technology.
+The Canton ecosystem grows stronger when more people contribute their knowledge, perspectives, and ideas.
+If you’ve published something insightful about Canton this November, we want to hear about it.
+The Canton Community Research Grants are a discretionary grant program of the Canton Foundation supporting independent research, education, and advocacy related to the Canton Network. This announcement describes the program in general terms. It is not an offer, a contest, or a promise to make any grant. Grants are made only in the Foundation’s sole discretion and are subject to the program Terms and Conditions (expected to be published by November 15, 2026); eligibility verification, including identity verification (KYC) and sanctions screening; applicable legal, tax, and payment requirements; and execution of a grant agreement. Monthly amounts are maximums. The Foundation may award less than the full amount, or nothing, in any month, and may modify, suspend, or end the program at any time. Grant recipients are not required to provide favorable coverage, endorse specific projects, or produce promotional content. Recipients will be required to disclose that they received a grant, as described in the Terms and Conditions.
