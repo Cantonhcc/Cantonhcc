@@ -124,6 +124,7 @@ for (const st of STATIONS) {
       if (ex.widget && /^(Tap|Drag|Pick|Scroll|Eight real|Twelve statements|Insert|Flip)/.test(para)) continue;
       art.append(h('p', { html: rich(para) }));
     }
+    if (ex.more) for (const para of ex.more) art.append(h('p', { html: rich(para) }));
     if (ex.widget) art.append(...widgetText(ex.widget));
     if (ex.sources.length) {
       const ul = h('ul', { class: 'srcs' });

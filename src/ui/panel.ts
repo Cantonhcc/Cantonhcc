@@ -5,6 +5,7 @@ import { ACCENT } from '../art/palette';
 import { iconCanvas } from '../art/icons';
 import type { Exhibit, IconId, Source, Station } from '../content/stations';
 import { mountWidget } from '../exhibits/widgets';
+import { mountFilm } from '../exhibits/films';
 import { $, esc, h, rich } from './dom';
 import { ui } from './hud';
 
@@ -76,7 +77,13 @@ export function openPanel(o: PanelOptions) {
 export function openExhibit(station: Station, ex: Exhibit, onClose: () => void) {
   const accent = ACCENT[station.id];
   const body = h('div', {});
+  if (ex.film) body.append(mountFilm(ex.film, accent));
   for (const para of ex.body) body.append(h('p', { html: rich(para) }));
+  if (ex.more) {
+    const more = h('details', { class: 'deeper' }, h('summary', {}, 'Dig deeper'));
+    for (const para of ex.more) more.append(h('p', { html: rich(para) }));
+    body.append(more);
+  }
   if (ex.widget) {
     const w = h('div', { class: 'widget w-' + ex.widget });
     body.append(w);
@@ -87,7 +94,7 @@ export function openExhibit(station: Station, ex: Exhibit, onClose: () => void) 
   }
   openPanel({
     kicker: `${station.name.toUpperCase()} · ${ex.kicker}`, title: ex.title, accent, icon: ex.icon, body, onClose,
-    wide: !!ex.widget,
+    wide: !!ex.widget || !!ex.film,
   });
 }
 

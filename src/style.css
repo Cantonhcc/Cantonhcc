@@ -432,3 +432,16 @@ button, input { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------- exhibit films ---------- */
+.film { margin: 14px 0 6px; background: #0b0d22; border: 3px solid var(--accent); box-shadow: 0 0 0 3px #15172b, 0 0 24px -4px var(--accent); }
+.film-head { font-family: var(--px); font-size: 8px; line-height: 1.5; padding: 8px 10px; color: var(--accent); background: #12142a; display: flex; gap: 8px; align-items: center; }
+.film-rec { width: 8px; height: 8px; background: #ff6b6b; animation: bob 1s steps(2) infinite; flex: none; }
+.film-screen { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; aspect-ratio: 2 / 1; }
+.film-caption { min-height: 3.1em; padding: 10px 12px; font-size: 23px; background: #12142a; border-top: 3px solid #15172b; text-align: center; display: grid; place-items: center; }
+.film-controls { display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px; background: #12142a; }
+.film-controls .pbtn { padding: 6px 9px; box-shadow: 0 0 0 3px #15172b; }
+.film-bar { flex: 1; height: 12px; background: #1f2450; border: 3px solid #15172b; cursor: pointer; }
+.film-bar i { display: block; height: 100%; background: var(--accent); }
+.deeper { margin: 6px 0 12px; border-left: 3px solid var(--accent); padding-left: 12px; }
+.deeper summary { cursor: pointer; font-family: var(--px); font-size: 9px; color: var(--accent); padding: 6px 0; }

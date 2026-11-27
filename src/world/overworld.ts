@@ -1,12 +1,14 @@
-// The lunar surface: eight stations, paved lit paths, starlight shards, PIP,
-// and a moonboard for anyone who would rather glide than walk.
+// The lunar surface, drawn as a small round moon. The ground rolls away over
+// a curved horizon, distant stations rise from behind it, and the world wraps:
+// keep going in one direction and you arrive back where you started.
 import { G, Scene } from '../game';
-import { clamp, rng } from '../engine/core';
+import { rng } from '../engine/core';
 import { audio } from '../engine/audio';
 import { input } from '../engine/input';
+import { makeCanvas } from '../engine/px';
 import { Particles, drawSparkle } from '../engine/particles';
 import { save, storeSave } from '../engine/save';
-import { ACCENT, SHARD_COLORS, StationId } from '../art/palette';
+import { ACCENT, SHARD_COLORS, STAR_COLORS, StationId } from '../art/palette';
 import { BuildingArt, makeBuildings } from '../art/buildings';
 import { glow, vignette } from '../art/glow';
 import { makeBeacon, makeBoulder, makeCrystal, makeDish, makeSolar } from '../art/props';
@@ -14,61 +16,60 @@ import { makeLamp, makeLander, makeRobot } from '../art/sprites';
 import { SHARDS, STATIONS } from '../content/stations';
 import { hasShard, stationDone, stationSeen, takeShard, totals } from '../progress';
 import { ui } from '../ui/hud';
-import { Crater, makeCraters, paintGround } from './ground';
-import { DOORS, GUIDE, LANDER, LANDING, MAP_H, MAP_W, PATHS, SHARD_SPOTS, distToPaths, ridgeY } from './layout';
+import { Crater, makeCraters, paintEarth, paintGround } from './ground';
+import { DOORS, GUIDE, LANDER, LANDING, MAP_H, MAP_W, PATHS, SHARD_SPOTS, delta, distToPaths, wrapX, wrapY } from './layout';
 import { Player } from './player';
 import { Interior } from './interior';
 
-interface Building { id: StationId; art: BuildingArt; x: number; y: number; left: number; top: number }
+interface Building { id: StationId; art: BuildingArt; x: number; y: number }
 interface Prop { x: number; y: number; img: HTMLCanvasElement; r: number; glow?: string; blink?: string }
 interface Drawable { y: number; draw: () => void }
 
-// The surface is expensive to paint, so it is built once and reused.
+const PAD = 900; // extra columns copied onto the right edge so one draw can cross the seam
+
 let cache: {
-  ground: HTMLCanvasElement; craters: Crater[]; buildings: Building[]; props: Prop[];
+  ground: HTMLCanvasElement; wide: HTMLCanvasElement; craters: Crater[]; buildings: Building[]; props: Prop[];
   lander: HTMLCanvasElement; robot: HTMLCanvasElement[]; lamps: Record<string, HTMLCanvasElement>;
-  studs: { x: number; y: number; i: number }[];
+  studs: { x: number; y: number; i: number }[]; stars: HTMLCanvasElement; earth: HTMLCanvasElement;
 } | null = null;
 
 function build() {
   const craters = makeCraters();
   const arts = makeBuildings();
-  const buildings: Building[] = (Object.keys(DOORS) as StationId[]).map((id) => {
-    const art = arts[id];
-    const d = DOORS[id];
-    return { id, art, x: d.x, y: d.y, left: d.x - art.doorX, top: d.y - (art.h - 4) };
-  });
+  const buildings: Building[] = (Object.keys(DOORS) as StationId[]).map((id) => ({ id, art: arts[id], x: DOORS[id].x, y: DOORS[id].y }));
   const ground = paintGround(craters, buildings.map((b) => ({ x: b.x, y: b.y, w: b.art.w, accent: ACCENT[b.id] })));
+  const wide = makeCanvas(MAP_W + PAD, MAP_H);
+  const wg = wide.getContext('2d')!;
+  wg.drawImage(ground, 0, 0);
+  wg.drawImage(ground, MAP_W, 0);
 
   const r = rng(99);
   const props: Prop[] = [];
   const free = (x: number, y: number, pad: number) => {
-    if (y < ridgeY(x | 0) + 26) return false;
     if (distToPaths(x, y) < 16 + pad) return false;
-    if (buildings.some((b) => Math.abs(b.x - x) < b.art.w / 2 + 14 + pad && y > b.top - 8 && y < b.y + 46)) return false;
+    if (buildings.some((b) => Math.abs(b.x - x) < b.art.w / 2 + 14 + pad && y > b.y - b.art.h - 4 && y < b.y + 46)) return false;
     if (Math.hypot(LANDER.x - x, LANDER.y - y) < 56 + pad || Math.hypot(GUIDE.x - x, GUIDE.y - y) < 30) return false;
     if (SHARD_SPOTS.some(([sx, sy]) => Math.hypot(sx - x, sy - y) < 22 + pad)) return false;
     if (props.some((k) => Math.hypot(k.x - x, k.y - y) < 24 + pad)) return false;
-    if (craters.some((c) => Math.hypot(c.x - x, c.y - y) < c.r + 6 && Math.hypot(c.x - x, c.y - y) > c.r - 8)) return false;
+    if (craters.some((c) => { const d = Math.hypot(delta(c.x - x, MAP_W), delta(c.y - y, MAP_H)); return d < c.r + 6 && d > c.r - 8; })) return false;
     return true;
   };
   const scatter = (n: number, pad: number, make: (i: number) => Omit<Prop, 'x' | 'y'>) => {
     let placed = 0;
     let guard = 0;
     while (placed < n && guard++ < 4000) {
-      const x = 24 + r() * (MAP_W - 48);
-      const y = 150 + r() * (MAP_H - 174);
+      const x = 20 + r() * (MAP_W - 40);
+      const y = 20 + r() * (MAP_H - 40);
       if (!free(x, y, pad)) continue;
       props.push({ x: Math.round(x), y: Math.round(y), ...make(placed) });
       placed++;
     }
   };
   const crystalColors = ['#4fd1c5', '#a78bfa', '#f472b6', '#9be7ff'];
-  scatter(9, 8, () => { const img = makeSolar(); return { img, r: 11 }; });
-  scatter(5, 8, () => { const img = makeDish(); return { img, r: 7, blink: '#ff6b6b' }; });
-  scatter(22, 2, (i) => { const c = crystalColors[i % crystalColors.length]; return { img: makeCrystal(c, i), r: 6, glow: c }; });
-  scatter(40, 0, (i) => { const img = makeBoulder(i); return { img, r: img.width / 2 - 1 }; });
-  // beacons mark the bends of the walkways
+  scatter(10, 8, () => ({ img: makeSolar(), r: 11 }));
+  scatter(6, 8, () => ({ img: makeDish(), r: 7, blink: '#ff6b6b' }));
+  scatter(26, 2, (i) => { const c = crystalColors[i % crystalColors.length]; return { img: makeCrystal(c, i), r: 6, glow: c }; });
+  scatter(46, 0, (i) => { const img = makeBoulder(i); return { img, r: img.width / 2 - 1 }; });
   for (const path of PATHS) {
     for (let i = 1; i < path.length - 1; i++) {
       props.push({ x: path[i][0] + 13, y: path[i][1] - 8, img: makeBeacon('#9be7ff'), r: 2, glow: '#9be7ff' });
@@ -95,7 +96,24 @@ function build() {
       }
     }
   }
-  cache = { ground, craters, buildings, props, lander: makeLander(), robot: makeRobot(ACCENT.welcome), lamps, studs };
+  // a tile of stars for the sky
+  const stars = makeCanvas(512, 256);
+  const sg = stars.getContext('2d')!;
+  const sr = rng(4242);
+  for (let n = 0; n < 420; n++) {
+    const x = Math.floor(sr() * 512);
+    const y = Math.floor(sr() * 256);
+    sg.fillStyle = STAR_COLORS[(sr() * STAR_COLORS.length) | 0];
+    sg.globalAlpha = 0.35 + sr() * 0.65;
+    sg.fillRect(x, y, 1, 1);
+    if (sr() < 0.06) {
+      sg.fillRect(x - 1, y, 3, 1);
+      sg.fillRect(x, y - 1, 1, 3);
+    }
+  }
+  const earth = makeCanvas(60, 60);
+  paintEarth(earth.getContext('2d')!, 30, 30, 26);
+  cache = { ground, wide, craters, buildings, props, lander: makeLander(), robot: makeRobot(ACCENT.welcome), lamps, studs, stars, earth };
 }
 
 /** The painted surface, for the mini-map and the travel map. */
@@ -106,13 +124,22 @@ export function mapCanvas(): HTMLCanvasElement | null {
 export class Overworld implements Scene {
   player: Player;
   private dust = new Particles();
-  private camX = 0;
-  private camY = 0;
   private near: Building | null = null;
   private enterHold = 0;
   private cut = -1;        // landing cutscene clock, -1 when not playing
   private ambient = 0;
   private mapTick = 0;
+  // projection state, refreshed every frame
+  private fx = 0;          // world point the camera looks at
+  private fy = 0;
+  private H0 = 40;         // screen y of the horizon
+  private P = 150;         // screen y of the focus point
+  private R = 110;         // radius of the little moon, in game pixels
+  private sagK = 0;
+  private qx = 0;          // result of the last place() call
+  private qy = 0;
+  private qs = 1;
+  private qfar = false;
 
   constructor(from?: StationId) {
     if (!cache) build();
@@ -123,7 +150,7 @@ export class Overworld implements Scene {
       this.cut = 0;
       this.player.frozen = true;
     }
-    this.snapCamera();
+    this.frame();
   }
 
   enter() {
@@ -136,15 +163,17 @@ export class Overworld implements Scene {
     ui.setRiding(false);
   }
   focus() {
-    return { x: this.player.x - this.camX, y: this.player.y - 10 - this.camY };
+    this.place(this.player.x, this.player.y);
+    return { x: this.qx, y: this.qy - 10 };
   }
 
   private solid = (x: number, y: number): boolean => {
     const c = cache!;
-    if (x < 6 || x > MAP_W - 6 || y > MAP_H - 6) return true;
-    if (y < ridgeY(x | 0) + 12) return true;
+    x = wrapX(x);
+    y = wrapY(y);
     for (const b of c.buildings) {
-      if (x > b.left + 5 && x < b.left + b.art.w - 5 && y > b.y - 24 && y < b.y + 1) return true;
+      const left = b.x - b.art.doorX;
+      if (x > left + 5 && x < left + b.art.w - 5 && y > b.y - 24 && y < b.y + 1) return true;
     }
     for (const k of c.props) {
       if (Math.abs(x - k.x) < k.r && y > k.y - 6 && y < k.y + 1) return true;
@@ -154,18 +183,50 @@ export class Overworld implements Scene {
     return false;
   };
 
-  private target(): { x: number; y: number } {
-    const fx = this.cut >= 0 ? LANDER.x : this.player.x;
-    const fy = this.cut >= 0 ? LANDER.y - 30 : this.player.y - 14;
-    return {
-      x: G.vw >= MAP_W ? (MAP_W - G.vw) / 2 : clamp(fx - G.vw / 2, 0, MAP_W - G.vw),
-      y: G.vh >= MAP_H ? (MAP_H - G.vh) / 2 : clamp(fy - G.vh / 2, 0, MAP_H - G.vh),
-    };
+  /** Sets up this frame's projection. */
+  private frame() {
+    const p = this.player;
+    this.fx = this.cut >= 0 ? LANDER.x : p.x;
+    this.fy = this.cut >= 0 ? LANDER.y - 6 : p.y;
+    this.H0 = Math.round(G.vh * 0.22);
+    this.P = Math.round(G.vh * 0.68);
+    this.R = this.P - this.H0;
+    this.sagK = (G.vh * 0.065) / ((G.vw / 2) * (G.vw / 2));
   }
-  private snapCamera() {
-    const t = this.target();
-    this.camX = t.x;
-    this.camY = t.y;
+
+  /**
+   * Projects a world point onto the screen. North of the focus the ground
+   * curves away like the surface of a ball; past the horizon things sink.
+   * Returns false when the point cannot be seen. Result is left in qx, qy, qs, qfar.
+   */
+  private place(x: number, y: number, margin = 60): boolean {
+    const dx = delta(x - this.fx, MAP_W);
+    if (Math.abs(dx) > G.vw / 2 + margin) return false;
+    const dy = delta(y - this.fy, MAP_H);
+    this.qx = G.vw / 2 + dx;
+    this.qfar = false;
+    if (dy >= 0) {
+      if (dy > G.vh - this.P + margin) return false;
+      this.qy = this.P + dy;
+      this.qs = 1;
+      return true;
+    }
+    const th = dy / this.R;
+    let w: number;
+    if (th >= -Math.PI / 2) {
+      this.qy = this.P + this.R * Math.sin(th);
+      this.qs = Math.max(0.12, Math.cos(th));
+      w = (this.P - this.qy) / this.R;
+    } else {
+      const phi = -th - Math.PI / 2;
+      if (phi > 1.35) return false;
+      this.qy = this.H0 + this.R * (1 - Math.cos(phi));
+      this.qs = 0.12;
+      this.qfar = true;
+      w = 1;
+    }
+    this.qy += this.sagK * dx * dx * w * w;
+    return true;
   }
 
   update(dt: number) {
@@ -178,31 +239,27 @@ export class Overworld implements Scene {
     if (this.cut < 0) {
       if (!locked && input.take('ride')) this.toggleRide();
       p.update(dt, this.solid, this.dust);
+      p.x = wrapX(p.x);
+      p.y = wrapY(p.y);
     }
     this.dust.update(dt);
-
-    // the camera glides after the player; drawing is sub-pixel, so this is smooth
-    const t = this.target();
-    const k = 1 - Math.exp(-dt * 9);
-    this.camX += (t.x - this.camX) * k;
-    this.camY += (t.y - this.camY) * k;
+    this.frame();
 
     for (const b of c.buildings) {
       for (const e of b.art.emitters) {
         if (Math.random() < dt * 9) {
           this.dust.add({
-            x: b.left + e.x + (Math.random() - 0.5) * 4, y: b.top + e.y,
-            vx: (Math.random() - 0.5) * 6, vy: -14 - Math.random() * 10,
-            life: 1.2 + Math.random(), color: e.color, drag: 0.4, twinkle: true,
+            x: b.x - b.art.doorX + e.x + (Math.random() - 0.5) * 4, y: b.y - 2, vx: (Math.random() - 0.5) * 6, vy: 0,
+            life: 1.2 + Math.random(), color: e.color, drag: 0.4, twinkle: true, h: b.art.h - 4 - e.y, vh: 14 + Math.random() * 8,
           });
         }
       }
     }
     this.ambient -= dt;
     if (this.ambient <= 0) {
-      this.ambient = 0.14;
+      this.ambient = 0.12;
       this.dust.add({
-        x: this.camX + Math.random() * G.vw, y: this.camY + Math.random() * G.vh,
+        x: p.x + (Math.random() - 0.5) * G.vw, y: p.y + (Math.random() - 0.7) * G.vh * 0.8,
         vx: (Math.random() - 0.5) * 4, vy: -3 - Math.random() * 4,
         life: 2 + Math.random() * 2, color: SHARD_COLORS[(Math.random() * 4) | 0], twinkle: true,
       });
@@ -220,10 +277,11 @@ export class Overworld implements Scene {
       return;
     }
 
+    const far = (x: number, y: number) => Math.hypot(delta(x - p.x, MAP_W), delta(y - p.y, MAP_H));
     SHARDS.forEach((s, i) => {
       if (hasShard(s.id)) return;
       const [sx, sy] = SHARD_SPOTS[i];
-      if (Math.hypot(p.x - sx, p.y - 4 - sy) < 14) {
+      if (far(sx, sy + 4) < 14) {
         takeShard(s.id);
         audio.sfx('collect');
         this.dust.burst(sx, sy - 6, 34, SHARD_COLORS, 80, 1.1);
@@ -234,9 +292,9 @@ export class Overworld implements Scene {
 
     this.near = null;
     for (const b of c.buildings) {
-      if (Math.abs(p.x - b.x) < 14 && p.y > b.y - 2 && p.y < b.y + 20) this.near = b;
+      if (Math.abs(delta(p.x - b.x, MAP_W)) < 14 && p.y > b.y - 2 && p.y < b.y + 20) this.near = b;
     }
-    const nearGuide = Math.hypot(p.x - GUIDE.x, p.y - GUIDE.y) < 28;
+    const nearGuide = far(GUIDE.x, GUIDE.y) < 28;
     if (this.near) {
       const st = STATIONS.find((s) => s.id === this.near!.id)!;
       ui.setPrompt(`Enter ${st.name}`);
@@ -274,6 +332,7 @@ export class Overworld implements Scene {
         'Hello, researcher! I am PIP. Welcome to Lunar Ledger base.',
         'Each building is a small museum about one part of the Canton Network.',
         'Start with the Welcome Dome, straight up the lit path.',
+        'This moon is small and round. Walk far enough in any direction and you come back to where you began.',
         'In a hurry? Press R to hop on your moonboard, or M to open the map and travel.',
       ];
     } else if (next) {
@@ -297,11 +356,10 @@ export class Overworld implements Scene {
     this.cut += dt;
     const t = this.cut;
     if (t < 2.6) {
-      const ly = this.landerY();
       for (let i = 0; i < 3; i++) {
         this.dust.add({
-          x: LANDER.x + (Math.random() - 0.5) * 6, y: ly - 6,
-          vx: (Math.random() - 0.5) * 30, vy: 40 + Math.random() * 50,
+          x: LANDER.x + (Math.random() - 0.5) * 6, y: LANDER.y - 2,
+          vx: (Math.random() - 0.5) * 30, vy: 0, h: this.landerLift() + 4, vh: -70,
           life: 0.3 + Math.random() * 0.3, color: ['#fff3c4', '#ffd27a', '#fb923c', '#9be7ff'][(Math.random() * 4) | 0], drag: 1,
         });
       }
@@ -313,7 +371,7 @@ export class Overworld implements Scene {
         this.dust.add({
           x: LANDER.x + dir * (6 + Math.random() * 10), y: LANDER.y,
           vx: dir * (30 + Math.random() * 70), vy: -Math.random() * 26,
-          life: 0.8 + Math.random() * 0.8, color: Math.random() < 0.5 ? '#aab2de' : '#7f87b8', drag: 2.2, gravity: 10,
+          life: 0.8 + Math.random() * 0.8, color: Math.random() < 0.5 ? '#aab2de' : '#7f87b8', drag: 2.2,
         });
       }
     }
@@ -330,26 +388,28 @@ export class Overworld implements Scene {
         'This base has eight small museums. Together they explain the Canton Network: how it works, who runs it, and what is really live.',
         'Walk with the arrow keys or WASD. Press E at a door or an exhibit.',
         'Would you rather glide? Press R for your moonboard. Press M for the map: click a station to travel there.',
+        'One more thing: this moon is round. Keep walking in one direction and you will come all the way back.',
         'Start with the Welcome Dome, straight ahead. I will be here if you need a hint.',
       ]);
     }
   }
-  private landerY(): number {
-    if (this.cut < 0) return LANDER.y;
+  /** How far above the pad the lander still is during the landing. */
+  private landerLift(): number {
+    if (this.cut < 0) return 0;
     const t = Math.min(1, this.cut / 2.6);
-    return LANDER.y - (1 - t) * (1 - t) * 260;
+    return (1 - t) * (1 - t) * 230;
   }
 
   private updateLabels() {
     const c = cache!;
     const labels = [];
     for (const b of c.buildings) {
-      const sx = b.x - this.camX;
-      const sy = b.top - this.camY;
-      if (sx < -80 || sx > G.vw + 80 || sy < -60 || sy > G.vh + 20) continue;
+      if (!this.place(b.x, b.y, 90)) continue;
+      const top = this.qy - b.art.h;
+      if (top > G.vh - 30 || this.qy < this.H0 - 4) continue;
       const st = STATIONS.find((s) => s.id === b.id)!;
       labels.push({
-        id: b.id, x: sx, y: Math.max(sy - 6, 14), text: st.name,
+        id: b.id, x: this.qx, y: Math.max(top - 2, 16), text: st.name,
         sub: stationDone(st) ? 'STAMPED' : `${stationSeen(st)}/${st.exhibits.length}`,
         color: ACCENT[b.id], done: stationDone(st),
       });
@@ -357,140 +417,210 @@ export class Overworld implements Scene {
     ui.setLabels(labels);
   }
 
+  private drawSky(ctx: CanvasRenderingContext2D) {
+    const c = cache!;
+    const w = G.vw;
+    const skyH = this.H0 + G.vh * 0.08 + 4;
+    const g = ctx.createLinearGradient(0, 0, 0, skyH);
+    g.addColorStop(0, '#04051a');
+    g.addColorStop(0.55, '#0c0f3c');
+    g.addColorStop(1, '#2b2370');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, skyH);
+    // the stars turn as you walk, which is what makes the ground feel like a ball
+    const ox = (((this.fx * 0.4) % 512) + 512) % 512;
+    const oy = (((this.fy * 0.4) % 256) + 256) % 256;
+    for (let x = -ox; x < w; x += 512) {
+      for (let y = -oy; y < skyH; y += 256) ctx.drawImage(c.stars, G.snap(x), G.snap(y));
+    }
+    const ex = w * 0.78;
+    const ey = this.H0 - 4 + this.sagK * (ex - w / 2) * (ex - w / 2);
+    glow(ctx, ex, ey, 60, '#3f7dff', 0.35);
+    ctx.drawImage(c.earth, ex - 30, ey - 30);
+    glow(ctx, w / 2, this.H0 + 6, w * 0.8, '#7f8cff', 0.3, 30);
+  }
+
+  private drawGround(ctx: CanvasRenderingContext2D) {
+    const c = cache!;
+    const w = G.vw;
+    const sx = wrapX(this.fx - w / 2);
+    ctx.save();
+    // everything below the curved horizon
+    ctx.beginPath();
+    ctx.moveTo(0, G.vh);
+    for (let x = 0; x <= w + 4; x += 4) ctx.lineTo(x, this.H0 + this.sagK * (x - w / 2) * (x - w / 2));
+    ctx.lineTo(w, G.vh);
+    ctx.closePath();
+    ctx.clip();
+    // rows north of the focus are squeezed more and more towards the horizon
+    const step = Math.max(1, Math.round(G.zp / 3)) / G.zp;
+    const R = this.R;
+    let prev = -Math.PI / 2;
+    for (let y = this.H0; y < this.P; y += step) {
+      const next = Math.asin(Math.min(0, (y + step - this.P) / R));
+      const h = Math.max(0.2, (next - prev) * R);
+      const wy = wrapY(this.fy + prev * R);
+      ctx.drawImage(c.wide, sx, Math.min(wy, MAP_H - h), w, h, 0, y, w, step + 0.02);
+      prev = next;
+    }
+    // south of the focus the ground is flat; one or two plain blits
+    const rest = G.vh - this.P;
+    const y0 = wrapY(this.fy);
+    const first = Math.min(rest, MAP_H - y0);
+    ctx.drawImage(c.wide, sx, y0, w, first, 0, this.P, w, first);
+    if (first < rest) ctx.drawImage(c.wide, sx, 0, w, rest - first, 0, this.P + first, w, rest - first);
+    // distance haze and a little night
+    const haze = ctx.createLinearGradient(0, this.H0, 0, this.H0 + R * 0.55);
+    haze.addColorStop(0, 'rgba(30,28,96,0.72)');
+    haze.addColorStop(1, 'rgba(30,28,96,0)');
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, this.H0, w, R * 0.6 + G.vh * 0.04);
+    ctx.fillStyle = 'rgba(8,10,44,0.2)';
+    ctx.fillRect(0, 0, w, G.vh);
+    ctx.restore();
+  }
+
   draw(ctx: CanvasRenderingContext2D) {
     const c = cache!;
-    const cx = G.snap(this.camX);
-    const cy = G.snap(this.camY);
     const t = G.time;
     const p = this.player;
-    ctx.fillStyle = '#04051a';
-    ctx.fillRect(0, 0, G.vw, G.vh);
-    ctx.drawImage(c.ground, -cx, -cy);
-    // night falls a little so that every lamp matters
-    ctx.fillStyle = 'rgba(8,10,44,0.2)';
-    ctx.fillRect(0, 0, G.vw, G.vh);
+    this.frame();
+    this.drawSky(ctx);
 
-    const vis = (x: number, y: number, m: number) => x > cx - m && x < cx + G.vw + m && y > cy - m && y < cy + G.vh + m + 60;
+    const nearItems: Drawable[] = [];
+    const farItems: Drawable[] = [];
+    const add = (x: number, y: number, margin: number, draw: (sx: number, sy: number, far: boolean) => void) => {
+      if (!this.place(x, y, margin)) return;
+      const sx = this.qx;
+      const sy = this.qy;
+      const far = this.qfar;
+      (far ? farItems : nearItems).push({ y: sy, draw: () => draw(sx, sy, far) });
+    };
 
-    // pools of light on the ground
     for (const b of c.buildings) {
-      if (!vis(b.x, b.y, 140)) continue;
-      const a = ACCENT[b.id];
-      glow(ctx, b.x - cx, b.y + 10 - cy, 44, a, 0.42, 26);
-      glow(ctx, b.x - 19 - cx, b.y + 6 - cy, 18, a, 0.5, 12);
-      glow(ctx, b.x + 19 - cx, b.y + 6 - cy, 18, a, 0.5, 12);
-    }
-    for (const k of c.props) {
-      if (k.glow && vis(k.x, k.y, 30)) glow(ctx, k.x - cx, k.y - 4 - cy, 22, k.glow, 0.34 + 0.1 * Math.sin(t * 2 + k.x), 14);
-    }
-    p.drawLight(ctx, cx, cy);
-
-    // walkway lights ripple towards the stations
-    for (const s of c.studs) {
-      const x = s.x - cx;
-      const y = s.y - cy;
-      if (x < -6 || y < -6 || x > G.vw + 6 || y > G.vh + 6) continue;
-      const on = (((s.i - Math.floor(t * 6)) % 6) + 6) % 6 === 0;
-      ctx.fillStyle = on ? '#f2fdff' : '#58b6d6';
-      ctx.fillRect(x, y, 1, 1);
-      if (on) glow(ctx, x + 0.5, y + 0.5, 7, '#9be7ff', 0.8);
-    }
-
-    const items: Drawable[] = [];
-    for (const b of c.buildings) {
-      if (!vis(b.x, b.y, 140)) continue;
-      items.push({
-        y: b.y - 2,
-        draw: () => {
-          ctx.drawImage(b.art.canvas, b.left - cx, b.top - cy);
-          for (const l of b.art.lights) {
-            const pulse = 0.5 + 0.5 * Math.sin(t * 2.4 + l.phase);
-            const lx = b.left + l.x - cx;
-            const ly = b.top + l.y - cy;
-            if (l.size <= 1) {
-              if (pulse > 0.4) {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(lx, ly, 1, 1);
-                glow(ctx, lx + 0.5, ly + 0.5, 6, l.color, 0.9);
-              }
-            } else {
-              glow(ctx, lx + 0.5, ly + 0.5, 10 + l.size * 4, l.color, 0.35 + pulse * 0.5);
-              drawSparkle(ctx, lx, ly, l.size, l.color);
+      add(b.x, b.y, 110, (sx, sy, far) => {
+        const a = ACCENT[b.id];
+        const left = sx - b.art.doorX;
+        const top = sy - (b.art.h - 4);
+        ctx.drawImage(b.art.canvas, left, top);
+        for (const l of b.art.lights) {
+          const pulse = 0.5 + 0.5 * Math.sin(t * 2.4 + l.phase);
+          if (l.size <= 1) {
+            if (pulse > 0.4) {
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(left + l.x, top + l.y, 1, 1);
+              glow(ctx, left + l.x + 0.5, top + l.y + 0.5, 6, l.color, 0.9);
             }
+          } else {
+            glow(ctx, left + l.x + 0.5, top + l.y + 0.5, 10 + l.size * 4, l.color, 0.35 + pulse * 0.5);
+            drawSparkle(ctx, left + l.x, top + l.y, l.size, l.color);
           }
-          const lamp = c.lamps[b.id];
-          ctx.drawImage(lamp, b.x - 22 - cx, b.y - 6 - cy);
-          ctx.drawImage(lamp, b.x + 16 - cx, b.y - 6 - cy);
-          glow(ctx, b.x - 18.5 - cx, b.y - 3 - cy, 9, ACCENT[b.id], 0.8);
-          glow(ctx, b.x + 19.5 - cx, b.y - 3 - cy, 9, ACCENT[b.id], 0.8);
-          // warm light spilling from the doorway
-          glow(ctx, b.x - cx, b.y - 8 - cy, 14, ACCENT[b.id], 0.45, 12);
-        },
+        }
+        if (far) return;
+        const lamp = c.lamps[b.id];
+        ctx.drawImage(lamp, sx - 22, sy - 6);
+        ctx.drawImage(lamp, sx + 16, sy - 6);
+        glow(ctx, sx - 18.5, sy - 3, 9, a, 0.8);
+        glow(ctx, sx + 19.5, sy - 3, 9, a, 0.8);
+        glow(ctx, sx, sy - 8, 14, a, 0.45, 12);
       });
     }
     for (const k of c.props) {
-      if (!vis(k.x, k.y, 30)) continue;
-      items.push({
-        y: k.y,
-        draw: () => {
-          const ix = k.x - k.img.width / 2 - cx;
-          const iy = k.y - k.img.height + 2 - cy;
+      add(k.x, k.y, 30, (sx, sy, far) => {
+        const iy = sy - k.img.height + 2;
+        if (!far) {
           ctx.fillStyle = 'rgba(14,15,40,0.35)';
-          ctx.fillRect(Math.round(k.x - k.r) - cx + 2, k.y - cy, k.r * 2, 2);
-          ctx.drawImage(k.img, Math.floor(k.x - k.img.width / 2) - cx, iy);
-          if (k.glow) glow(ctx, ix + k.img.width / 2, iy + k.img.height / 2 - 2, 12, k.glow, 0.5);
-          if (k.blink && Math.sin(t * 3 + k.x) > 0.3) glow(ctx, k.x + 3.5 - cx, iy + 2.5, 7, k.blink, 0.9);
-        },
+          ctx.fillRect(sx - k.r + 2, sy, k.r * 2, 2);
+        }
+        ctx.drawImage(k.img, sx - Math.floor(k.img.width / 2), iy);
+        if (k.glow) glow(ctx, sx, iy + k.img.height / 2 - 2, 12, k.glow, 0.5);
+        if (k.blink && Math.sin(t * 3 + k.x) > 0.3) glow(ctx, sx + 3.5, iy + 2.5, 7, k.blink, 0.9);
       });
     }
-    items.push({
-      y: LANDER.y,
-      draw: () => {
-        const ly = this.landerY();
-        ctx.drawImage(c.lander, LANDER.x - 23 - cx, ly - 42 - cy);
-        glow(ctx, LANDER.x + 5 - cx, ly - 30 - cy, 9, '#ff9d4d', 0.4 + 0.4 * Math.sin(t * 3));
-        if (this.cut >= 0 && this.cut < 2.6) glow(ctx, LANDER.x - cx, ly + 4 - cy, 40, '#ffd27a', 0.8, 30);
-      },
+    add(LANDER.x, LANDER.y, 40, (sx, sy) => {
+      const lift = this.landerLift();
+      ctx.drawImage(c.lander, sx - 23, sy - 42 - lift);
+      glow(ctx, sx + 5, sy - 30 - lift, 9, '#ff9d4d', 0.4 + 0.4 * Math.sin(t * 3));
+      if (this.cut >= 0 && this.cut < 2.6) glow(ctx, sx, sy + 4, 40, '#ffd27a', 0.8, 30);
     });
-    items.push({
-      y: GUIDE.y,
-      draw: () => {
-        const bob = Math.sin(t * 2.2) * 2;
-        ctx.fillStyle = 'rgba(14,15,40,0.4)';
-        ctx.fillRect(GUIDE.x - 4 - cx, GUIDE.y - 1 - cy, 8, 2);
-        glow(ctx, GUIDE.x - cx, GUIDE.y - 4 - cy, 16, '#4fd1c5', 0.4, 9);
-        ctx.drawImage(c.robot[Math.floor(t * 0.7) % 5 === 0 && (t * 3) % 1 < 0.3 ? 1 : 0], GUIDE.x - 8 - cx, GUIDE.y - 22 + bob - cy);
-        if (Math.random() < 0.2) this.dust.add({ x: GUIDE.x + (Math.random() - 0.5) * 3, y: GUIDE.y - 5 + bob, vy: 10, life: 0.3, color: '#9be7ff' });
-      },
+    add(GUIDE.x, GUIDE.y, 30, (sx, sy) => {
+      const bob = Math.sin(t * 2.2) * 2;
+      ctx.fillStyle = 'rgba(14,15,40,0.4)';
+      ctx.fillRect(sx - 4, sy - 1, 8, 2);
+      ctx.drawImage(c.robot[Math.floor(t * 0.7) % 5 === 0 && (t * 3) % 1 < 0.3 ? 1 : 0], sx - 8, sy - 22 + bob);
     });
     SHARDS.forEach((s, i) => {
       if (hasShard(s.id)) return;
-      const [sx, sy] = SHARD_SPOTS[i];
-      if (!vis(sx, sy, 30)) return;
-      items.push({
-        y: sy,
-        draw: () => {
-          const bob = Math.sin(t * 2 + i) * 2.5;
-          const x = sx - cx;
-          const y = sy - 9 + bob - cy;
-          const pulse = 0.5 + 0.5 * Math.sin(t * 4 + i * 1.7);
-          glow(ctx, x + 0.5, sy + 1 - cy, 16, '#ffe27a', 0.35, 7);
-          glow(ctx, x + 0.5, y + 0.5, 20 + pulse * 6, '#ffe27a', 0.75);
-          ctx.fillStyle = '#ffe27a';
-          ctx.fillRect(x - 1, y - 3, 3, 7);
-          ctx.fillRect(x - 2, y - 2, 5, 5);
-          ctx.fillRect(x - 3, y - 1, 7, 3);
-          ctx.fillStyle = '#fff7c2';
-          ctx.fillRect(x - 1, y - 2, 2, 3);
-          drawSparkle(ctx, x, y, 4 + Math.round(pulse * 2), '#fff7c2');
-        },
+      const [wx, wy] = SHARD_SPOTS[i];
+      add(wx, wy, 30, (sx, sy) => {
+        const bob = Math.sin(t * 2 + i) * 2.5;
+        const y = sy - 9 + bob;
+        const pulse = 0.5 + 0.5 * Math.sin(t * 4 + i * 1.7);
+        glow(ctx, sx + 0.5, y + 0.5, 20 + pulse * 6, '#ffe27a', 0.75);
+        ctx.fillStyle = '#ffe27a';
+        ctx.fillRect(sx - 1, y - 3, 3, 7);
+        ctx.fillRect(sx - 2, y - 2, 5, 5);
+        ctx.fillRect(sx - 3, y - 1, 7, 3);
+        ctx.fillStyle = '#fff7c2';
+        ctx.fillRect(sx - 1, y - 2, 2, 3);
+        drawSparkle(ctx, sx, y, 4 + Math.round(pulse * 2), '#fff7c2');
       });
     });
-    if (this.cut < 0 || this.cut >= 3.5) items.push({ y: p.y, draw: () => p.draw(ctx, cx, cy) });
+    if (this.cut < 0 || this.cut >= 3.5) {
+      add(p.x, p.y, 40, (sx, sy) => {
+        // the player draws itself in world space; hand it a camera that lands it at (sx, sy)
+        p.draw(ctx, p.x - sx, p.y - sy);
+      });
+    }
 
-    items.sort((a, b) => a.y - b.y);
-    for (const it of items) it.draw();
-    this.dust.draw(ctx, cx, cy);
+    // things beyond the horizon first: the ground will cover whatever has sunk
+    farItems.sort((a, b) => b.y - a.y);
+    for (const it of farItems) it.draw();
+    this.drawGround(ctx);
+
+    // light pooled on the ground
+    for (const b of c.buildings) {
+      if (!this.place(b.x, b.y + 10, 120) || this.qfar) continue;
+      const a = ACCENT[b.id];
+      glow(ctx, this.qx, this.qy, 44, a, 0.42, 26 * this.qs);
+    }
+    for (const k of c.props) {
+      if (!k.glow || !this.place(k.x, k.y - 2, 30) || this.qfar) continue;
+      glow(ctx, this.qx, this.qy, 22, k.glow, 0.34 + 0.1 * Math.sin(t * 2 + k.x), 14 * this.qs);
+    }
+    if (this.place(p.x, p.y, 40)) {
+      glow(ctx, this.qx, this.qy - 6, 46, '#8fa8ff', 0.16, 34);
+      if (p.riding) glow(ctx, this.qx, this.qy, 26, '#4fd1c5', 0.55, 12);
+    }
+    if (this.place(GUIDE.x, GUIDE.y - 3, 30) && !this.qfar) glow(ctx, this.qx, this.qy, 16, '#4fd1c5', 0.4, 9);
+    SHARDS.forEach((s, i) => {
+      if (hasShard(s.id)) return;
+      if (this.place(SHARD_SPOTS[i][0], SHARD_SPOTS[i][1] + 1, 30) && !this.qfar) glow(ctx, this.qx, this.qy, 16, '#ffe27a', 0.35, 7 * this.qs);
+    });
+    // walkway lights ripple towards the stations
+    for (const s of c.studs) {
+      if (!this.place(s.x, s.y, 6) || this.qfar) continue;
+      const on = (((s.i - Math.floor(t * 6)) % 6) + 6) % 6 === 0;
+      ctx.fillStyle = on ? '#f2fdff' : '#58b6d6';
+      ctx.fillRect(this.qx, this.qy, 1, 1);
+      if (on) glow(ctx, this.qx + 0.5, this.qy + 0.5, 7, '#9be7ff', 0.8, 7 * Math.max(0.4, this.qs));
+    }
+
+    nearItems.sort((a, b) => a.y - b.y);
+    for (const it of nearItems) it.draw();
+
+    // dust and sparks live in world space; some carry a height above the ground
+    for (const d of this.dust.list) {
+      if (!this.place(d.x, d.y, 10) || this.qfar) continue;
+      const k = d.life / d.max;
+      if (d.twinkle && ((d.life * 12) | 0) % 2 === 0 && k < 0.6) continue;
+      ctx.globalAlpha = k < 0.3 ? k / 0.3 : 1;
+      ctx.fillStyle = d.color;
+      ctx.fillRect(this.qx, this.qy - d.h, d.size, d.size);
+    }
+    ctx.globalAlpha = 1;
+    // a thin line of light on the limb of the moon
+    glow(ctx, G.vw / 2, this.H0 + G.vh * 0.02, G.vw * 0.75, '#aab6ff', 0.22, 9);
     vignette(ctx, G.vw, G.vh, 0.5);
   }
 }

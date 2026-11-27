@@ -27,6 +27,10 @@ export interface Exhibit {
   icon: IconId;
   body: string[];
   widget?: WidgetId;
+  /** A short animated film shown at the top of the exhibit. */
+  film?: 'chain' | 'journey' | 'envelope' | 'furnace' | 'votes' | 'jars' | 'tub';
+  /** Extra paragraphs behind a "Dig deeper" fold. */
+  more?: string[];
   sources: Source[];
 }
 
@@ -131,11 +135,15 @@ export const STATIONS: Station[] = [
     intro: 'Start here. Four short exhibits explain what Canton is before you explore the rest of the base.',
     exhibits: [
       {
-        id: 'w1', title: 'Not one chain', kicker: 'THE BIG IDEA', icon: 'globe',
+        id: 'w1', film: 'chain', title: 'Not one chain', kicker: 'THE BIG IDEA', icon: 'globe',
         body: [
           'Most blockchains are a single shared ledger that every node copies. Canton is built the other way round, as a **network of networks**.',
           'The official docs say it in two sentences: “Canton separates coordination from storage. Synchronizers coordinate transaction ordering; participant nodes (validators) store data for their hosted parties.”',
           'So no computer anywhere holds the whole ledger. Each institution keeps its own contracts. What they share is a service that puts encrypted messages in order. In the docs’ words: “Unlike Ethereum where every node stores all state, Canton nodes store only their parties’ data.”',
+        ],
+        more: [
+          'The docs describe the synchronizer as “a coordination layer, not a state storage layer. It never stores or has access to transaction data, only encrypted messages and confirmation results.”',
+          'A consequence people miss: there is no single place to look up “the state of Canton”. A question such as “how many of this token exist?” can only be answered by the parties who hold the relevant contracts.',
         ],
         sources: [SRC.arch],
       },
@@ -145,10 +153,14 @@ export const STATIONS: Station[] = [
         sources: [SRC.core, SRC.arch, SRC.gs, SRC.svc, SRC.ordering],
       },
       {
-        id: 'w3', title: 'Life of a transaction', kicker: 'FIVE STEPS', icon: 'steps', widget: 'lifecycle',
+        id: 'w3', film: 'journey', title: 'Life of a transaction', kicker: 'FIVE STEPS', icon: 'steps', widget: 'lifecycle',
         body: [
           'A Canton transaction is split into encrypted pieces called **views**. Each piece goes only to the parties with a stake in it. The docs sum it up: “No single node ever sees the full transaction in the clear.”',
           'Once the verdict is delivered, it is final: “There are no forks, reorganizations, or rollbacks.”',
+        ],
+        more: [
+          'Confirmation is strict: “A single signatory failing its threshold is enough to reject the entire transaction.” A deal either happens for everyone involved, or for no one.',
+          'This is also why a contract depends on its signatories being reachable. If the nodes that host them are offline, nothing involving that contract can be confirmed.',
         ],
         sources: [SRC.life],
       },
@@ -184,11 +196,15 @@ export const STATIONS: Station[] = [
         sources: [SRC.m2, SRC.life],
       },
       {
-        id: 'p3', title: 'The metadata footnote', kicker: 'READ THE SMALL PRINT', icon: 'note',
+        id: 'p3', film: 'envelope', title: 'The metadata footnote', kicker: 'READ THE SMALL PRINT', icon: 'note',
         body: [
           'The privacy page promises “No metadata leakage about parties not entitled to see an action”. That sentence is about other participants: they cannot even tell that you traded.',
           'The infrastructure is a separate question, and a different page answers it. Sequencers “see metadata — recipient lists and message sizes — but not transaction content.” On the Global Synchronizer, sequencers are run by the Super Validators.',
           '**The takeaway:** what you traded stays hidden from the network operators. That a message went to certain nodes, when, and how large it was, does not. Both statements are true at once, and most explainers quote only the first.',
+        ],
+        more: [
+          'The same reference page lists what a sequencer does: it gives every batch of messages a position in one total order, forwards “opaque (encrypted) messages”, and “never holds decryption keys”.',
+          'Why does the envelope matter if the letter is sealed? Because patterns can be informative on their own: who exchanges messages with whom, how often, and how large they are.',
         ],
         sources: [SRC.privacy, SRC.ordering],
       },
@@ -224,7 +240,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.ccwp, SRC.fdv, SRC.cip0067, SRC.cip0082],
       },
       {
-        id: 'r3', title: 'Burn versus mint', kicker: 'THE SCOREBOARD', icon: 'flame', widget: 'burnmint',
+        id: 'r3', film: 'furnace', title: 'Burn versus mint', kicker: 'THE SCOREBOARD', icon: 'flame', widget: 'burnmint',
         body: [
           'The design target is a balance: “network usage must burn 2.5 billion Canton Coins per year” for supply to hold steady in the long run. Fees are priced in US dollars and paid by burning CC.',
           'So far minting has stayed ahead of burning. The gauge shows the ratios that third parties have reported.',
@@ -250,7 +266,7 @@ export const STATIONS: Station[] = [
     intro: 'Who actually runs the Global Synchronizer? Count the seats, then follow the money.',
     exhibits: [
       {
-        id: 'g1', title: 'Thirteen seats at the table', kicker: 'INTERACTIVE', icon: 'nodes', widget: 'vote',
+        id: 'g1', film: 'votes', title: 'Thirteen seats at the table', kicker: 'INTERACTIVE', icon: 'nodes', widget: 'vote',
         body: [
           'Headlines speak of 50 or 60 Super Validators. The MainNet configuration file lists **13 approved node identities, run by 11 organisations**. Two organisations run two nodes each.',
           'Votes are one per node. Try to pass a proposal.',
@@ -266,7 +282,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.svyaml, SRC.svgov, SRC.cip0083, SRC.cip0045],
       },
       {
-        id: 'g3', title: 'Follow the money', kicker: 'OUR COUNT FROM THE FIRST REPORT', icon: 'money', widget: 'fund',
+        id: 'g3', film: 'jars', title: 'Follow the money', kicker: 'OUR COUNT FROM THE FIRST REPORT', icon: 'money', widget: 'fund',
         body: [
           'Five percent of future Canton Coin emission goes to a Protocol Development Fund. Its first report, in August 2026, lists every project that had been paid.',
           'We summed the appendix by recipient.',
@@ -305,7 +321,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.summit, SRC.dtccLive, SRC.jpm, SRC.hsbc, SRC.uber, SRC.ust, SRC.usdcx, SRC.cip0130, SRC.nomuraNews],
       },
       {
-        id: 'h2', title: 'The trillions decoder', kicker: 'SIX NUMBERS, ONE NETWORK', icon: 'digits', widget: 'trillions',
+        id: 'h2', film: 'tub', title: 'The trillions decoder', kicker: 'SIX NUMBERS, ONE NETWORK', icon: 'digits', widget: 'trillions',
         body: ['Canton is described with numbers from zero to 114 trillion dollars. They are not in conflict. They count different things. Flip each card.'],
         sources: [SRC.leap, SRC.sft, SRC.rwaNews, SRC.rwa],
       },

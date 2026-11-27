@@ -3,11 +3,17 @@ import type { StationId } from '../art/palette';
 
 export const MAP_W = 1280;
 export const MAP_H = 900;
-export const SKY = 118;
-
-/** The ridge line that separates the walkable surface from the sky. */
-export function ridgeY(x: number): number {
-  return SKY + Math.round(Math.sin(x * 0.013) * 7 + Math.sin(x * 0.041 + 2) * 4 + Math.sin(x * 0.09 + 5) * 2);
+/** The world is a closed surface: walk far enough in any direction and you come back. */
+export function wrapX(v: number): number {
+  return ((v % MAP_W) + MAP_W) % MAP_W;
+}
+export function wrapY(v: number): number {
+  return ((v % MAP_H) + MAP_H) % MAP_H;
+}
+/** Shortest signed distance from a to b along a wrapped axis. */
+export function delta(d: number, size: number): number {
+  d = ((d % size) + size) % size;
+  return d > size / 2 ? d - size : d;
 }
 
 /** Door positions (the point on the ground in front of each building). */

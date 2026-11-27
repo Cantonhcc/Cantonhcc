@@ -4,6 +4,8 @@ export interface Particle {
   x: number; y: number; vx: number; vy: number;
   life: number; max: number; color: string; size: number;
   gravity: number; drag: number; twinkle: boolean;
+  /** Height above the ground and its rate of change, for smoke and exhaust in the projected world. */
+  h: number; vh: number;
 }
 
 export class Particles {
@@ -13,7 +15,7 @@ export class Particles {
     if (this.list.length > 900) return;
     const life = p.life ?? 1;
     this.list.push({
-      vx: 0, vy: 0, color: '#ffffff', size: 1, gravity: 0, drag: 0, twinkle: false,
+      vx: 0, vy: 0, color: '#ffffff', size: 1, gravity: 0, drag: 0, twinkle: false, h: 0, vh: 0,
       ...p, life, max: life,
     });
   }
@@ -47,6 +49,7 @@ export class Particles {
       }
       p.x += p.vx * dt;
       p.y += p.vy * dt;
+      p.h = Math.max(0, p.h + p.vh * dt);
     }
   }
   draw(ctx: CanvasRenderingContext2D, ox = 0, oy = 0) {
