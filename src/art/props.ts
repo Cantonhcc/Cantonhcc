@@ -108,3 +108,43 @@ export function makeBoard(): HTMLCanvasElement[] {
     return p.canvas;
   });
 }
+
+/** The arrival ship: white hull, violet trim and a lime C badge. Faces right. */
+export function makeShip(): HTMLCanvasElement {
+  const p = new Px(76, 34);
+  const V = '#875cff';
+  const D = '#4e22c9';
+  const L = '#f3ff97';
+  // fins
+  for (let i = 0; i < 11; i++) {
+    p.rect(10 + i, 6 + i, 12 - i, 1, i < 2 ? '#b69cff' : V);
+    p.rect(10 + i, 27 - i, 12 - i, 1, i > 8 ? V : D);
+  }
+  // hull
+  p.shade(8, 7, 64, 20, ['#ffffff', '#eef1ff', '#d3d8f4', '#aab1da', '#8088b8'], (x, y) => {
+    const dx = (x - 38) / 34;
+    const taper = x > 38 ? 1 - Math.pow((x - 38) / 34, 2) * 0.9 : 1 - Math.pow((38 - x) / 30, 2) * 0.35;
+    return Math.abs(dx) <= 1 && Math.abs(y - 16.5) <= 9.5 * Math.max(0, taper);
+  }, (x, y) => 0.95 - (y - 7) / 24, 0.5);
+  // violet belly stripe and nose
+  for (let x = 12; x < 66; x++) p.px(x, 21 + (x > 56 ? Math.round((x - 56) * -0.3) : 0), V);
+  p.rect(66, 15, 5, 3, V);
+  // cockpit
+  p.rrect(50, 11, 11, 6, '#1c2b52');
+  p.rect(51, 12, 8, 2, '#2f5b8f');
+  p.rect(51, 12, 3, 1, '#8ff0ff');
+  // badge
+  p.rrect(27, 10, 11, 11, D);
+  p.rect(28, 11, 9, 9, V);
+  p.rect(31, 12, 4, 1, L);
+  p.rect(30, 13, 1, 5, L);
+  p.rect(31, 18, 4, 1, L);
+  p.px(35, 13, L);
+  p.px(35, 17, L);
+  // engine block
+  p.rect(4, 11, 6, 12, '#5b6192');
+  p.rect(2, 13, 3, 8, '#3f436b');
+  p.rect(4, 11, 6, 1, '#aab1da');
+  p.outline(INK);
+  return p.canvas;
+}

@@ -12,6 +12,10 @@ const BOOT = '#5b6192';
 const VISOR = '#1c2b52';
 const VISOR2 = '#2f5b8f';
 const GLARE = '#8ff0ff';
+// Canton's own site colours: violet and pale lime
+const CV = '#875cff';
+const CD = '#4e22c9';
+const CL = '#f3ff97';
 
 function astronautFrame(dir: Dir, frame: number): HTMLCanvasElement {
   const p = new Px(18, 24);
@@ -22,54 +26,63 @@ function astronautFrame(dir: Dir, frame: number): HTMLCanvasElement {
     const r = 4 + (step < 0 ? 1 : step > 0 ? -1 : 0);
     p.rect(5, 18, 3, l, SUIT2);
     p.rect(10, 18, 3, r, SUIT2);
-    p.rect(5, 18 + l - 2, 3, 2, BOOT);
-    p.rect(10, 18 + r - 2, 3, 2, BOOT);
+    p.rect(5, 18 + l - 2, 3, 2, CD);
+    p.rect(10, 18 + r - 2, 3, 2, CD);
     // arms
     const la = step > 0 ? 1 : 0;
     const ra = step < 0 ? 1 : 0;
     p.rect(2, 11 + la, 2, 6, SUIT2);
     p.rect(14, 11 + ra, 2, 6, SUIT2);
-    p.rect(2, 16 + la, 2, 2, PACK);
-    p.rect(14, 16 + ra, 2, 2, PACK);
+    p.rect(2, 11 + la, 2, 1, CV);
+    p.rect(14, 11 + ra, 2, 1, CV);
+    p.rect(2, 16 + la, 2, 2, CV);
+    p.rect(14, 16 + ra, 2, 2, CV);
     // torso
     p.rect(4, 11, 10, 7, SUIT);
-    p.rect(4, 17, 10, 1, PACK);
-    // helmet
+    p.rect(4, 17, 10, 1, CD);
+    // helmet with a violet crest
     p.rrect(3, 1, 12, 10, SUIT);
+    p.rect(5, 1, 8, 1, CV);
     p.rect(4, 10, 10, 1, SUIT2);
     if (dir === 'down') {
-      p.rect(7, 12, 4, 3, PACK);
-      p.px(8, 13, '#ff9d4d');
-      p.px(9, 13, '#4fd1c5');
+      // chest badge: a lime C on violet
+      p.rect(6, 11, 6, 5, CV);
+      p.rect(7, 12, 3, 1, CL);
+      p.px(7, 13, CL);
+      p.rect(7, 14, 3, 1, CL);
       p.rrect(5, 3, 8, 6, VISOR);
       p.rect(6, 4, 6, 2, VISOR2);
       p.rect(6, 4, 2, 1, GLARE);
       p.px(6, 5, GLARE);
     } else {
       // backpack
-      p.rect(5, 10, 8, 7, PACK);
-      p.rect(6, 11, 6, 1, SUIT3);
-      p.px(7, 13, '#ff9d4d');
-      p.px(10, 13, '#4fd1c5');
+      p.rect(5, 10, 8, 7, CV);
+      p.rect(6, 11, 6, 1, CL);
+      p.rect(6, 15, 6, 1, CD);
+      p.px(7, 13, CL);
+      p.px(10, 13, '#ffffff');
       p.rect(4, 3, 10, 1, SUIT2);
     }
   } else {
     // side view, facing right (left is mirrored)
     const s = step;
     p.rect(6 - s, 18, 3, 4, SUIT3);
-    p.rect(6 - s, 20, 3, 2, BOOT);
+    p.rect(6 - s, 20, 3, 2, CD);
     p.rect(9 + s, 18, 3, 4, SUIT2);
-    p.rect(9 + s, 20, 4, 2, BOOT);
+    p.rect(9 + s, 20, 4, 2, CD);
     // backpack then torso
-    p.rect(2, 10, 4, 8, PACK);
-    p.px(3, 12, '#ff9d4d');
+    p.rect(2, 10, 4, 8, CV);
+    p.rect(2, 11, 3, 1, CL);
     p.rect(5, 11, 8, 7, SUIT);
-    p.rect(5, 17, 8, 1, PACK);
-    // arm
+    p.rect(5, 17, 8, 1, CD);
+    // arm with a violet shoulder band
     p.rect(8 + s, 12, 3, 5, SUIT2);
-    p.rect(8 + s, 16, 3, 2, PACK);
+    p.rect(8 + s, 12, 3, 1, CV);
+    p.px(9 + s, 13, CL);
+    p.rect(8 + s, 16, 3, 2, CV);
     // helmet
     p.rrect(4, 1, 11, 10, SUIT);
+    p.rect(6, 1, 7, 1, CV);
     p.rect(5, 10, 9, 1, SUIT2);
     p.rrect(10, 3, 5, 6, VISOR);
     p.rect(11, 4, 3, 2, VISOR2);

@@ -3,6 +3,7 @@
 // configuration file, Foundation pages). "reported" sources are third-party
 // coverage that could not be opened in full and are worded as reports.
 import type { StationId } from '../art/palette';
+import type { FilmId } from '../exhibits/films';
 
 export type WidgetId =
   | 'glossary' | 'lifecycle' | 'whosees' | 'issuance' | 'burnmint' | 'fee' | 'patchnotes'
@@ -28,7 +29,7 @@ export interface Exhibit {
   body: string[];
   widget?: WidgetId;
   /** A short animated film shown at the top of the exhibit. */
-  film?: 'chain' | 'journey' | 'envelope' | 'furnace' | 'votes' | 'jars' | 'tub';
+  film?: FilmId;
   /** Extra paragraphs behind a "Dig deeper" fold. */
   more?: string[];
   sources: Source[];
@@ -165,7 +166,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.life],
       },
       {
-        id: 'w4', title: 'Stake without staking', kicker: 'A NAME THAT MISLEADS', icon: 'stake',
+        id: 'w4', film: 'stake', title: 'Stake without staking', kicker: 'A NAME THAT MISLEADS', icon: 'stake',
         body: [
           'Canton calls its consensus **Proof of Stakeholder**. It sounds like proof of stake. It is not.',
           'Nobody locks tokens to validate. A “stakeholder” is a party that signed or observes a contract. The docs: “only the participant nodes hosting parties with a stake in the affected contracts participate in validation and confirmation.”',
@@ -187,7 +188,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.privacy, SRC.core, SRC.life, SRC.ordering, SRC.svc],
       },
       {
-        id: 'p2', title: 'No zero-knowledge here', kicker: 'HOW THE PRIVACY WORKS', icon: 'lock',
+        id: 'p2', film: 'share', title: 'No zero-knowledge here', kicker: 'HOW THE PRIVACY WORKS', icon: 'lock',
         body: [
           'Many people assume a privacy chain must run on zero-knowledge proofs. Canton’s own docs say otherwise: “Canton does not use zero-knowledge proofs. Instead, privacy is achieved through selective data distribution.”',
           'In plain words, your data is private because it is never sent to anyone who is not part of the deal. The docs describe a node that hosts no stakeholder as one that “receives nothing and learns nothing about the transaction.”',
@@ -209,7 +210,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.privacy, SRC.ordering],
       },
       {
-        id: 'p4', title: 'The price of privacy', kicker: 'TRADE-OFFS', icon: 'scale',
+        id: 'p4', film: 'host', title: 'The price of privacy', kicker: 'TRADE-OFFS', icon: 'scale',
         body: [
           '**You trust your host.** The docs are blunt: “Your hosting validator sees all your data.”',
           '**There is no global state to check.** “There is no shared global state that could be queried or leaked.” That protects secrets, and it also means an outsider cannot independently verify, say, the total supply of a private asset.',
@@ -226,12 +227,12 @@ export const STATIONS: Station[] = [
     intro: 'Fees burn Canton Coin. Rewards mint it. Step up to the core and watch the two sides.',
     exhibits: [
       {
-        id: 'r1', title: 'The mint schedule', kicker: 'INTERACTIVE', icon: 'chart', widget: 'issuance',
+        id: 'r1', film: 'steps', title: 'The mint schedule', kicker: 'INTERACTIVE', icon: 'chart', widget: 'issuance',
         body: ['A new mining round opens every 10 minutes. How much may be minted, and who gets it, changes in steps. Drag the slider through the years.'],
         sources: [SRC.ccwp, SRC.tokgs, SRC.cip0082],
       },
       {
-        id: 'r2', title: 'Fair launch, with footnotes', kicker: 'SUPPLY', icon: 'coin',
+        id: 'r2', film: 'cap', title: 'Fair launch, with footnotes', kicker: 'SUPPLY', icon: 'coin',
         body: [
           'The white paper is clear about the start: “There are no presales or special pools for “founders”.” Every coin has been minted by taking part in the network.',
           '**Footnote 1: there is no hard cap.** The schedule allows up to 100 billion CC in the first ten years and 2.5 billion a year after that. Canton’s own blog corrects the common belief in a fixed maximum supply: actual supply is what was minted minus what was burned.',
@@ -248,12 +249,12 @@ export const STATIONS: Station[] = [
         sources: [SRC.ccwp, SRC.cip0078, SRC.pill, SRC.alea, SRC.burnNews],
       },
       {
-        id: 'r4', title: 'Anatomy of a $1 transaction', kicker: 'INTERACTIVE', icon: 'bill', widget: 'fee',
+        id: 'r4', film: 'bytes', title: 'Anatomy of a $1 transaction', kicker: 'INTERACTIVE', icon: 'bill', widget: 'fee',
         body: ['Canton does not charge gas. It charges for **traffic**: the bytes your validator sends to be put in order. “The sending validator is charged; recipients are not.”'],
         sources: [SRC.cip0129, SRC.traffic, SRC.tokgs],
       },
       {
-        id: 'r5', title: 'Patch notes: the war on reward farming', kicker: 'CHANGELOG', icon: 'patch', widget: 'patchnotes',
+        id: 'r5', film: 'patches', title: 'Patch notes: the war on reward farming', kicker: 'CHANGELOG', icon: 'patch', widget: 'patchnotes',
         body: ['Early rewards were generous on purpose, and people optimised for them. Governance has been patching the rules ever since. These are the release notes, taken from the proposals themselves.'],
         sources: [SRC.cip0070, SRC.cip0078, SRC.cip0096, SRC.cip0098, SRC.cip0104, SRC.cip0105, SRC.cip0116, SRC.cctok],
       },
@@ -274,7 +275,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.svyaml, SRC.svgov, SRC.faqpdf],
       },
       {
-        id: 'g2', title: 'Weight is not votes', kicker: 'OUR COUNT FROM THE CONFIG FILE', icon: 'bars', widget: 'weights',
+        id: 'g2', film: 'ghosts', title: 'Weight is not votes', kicker: 'OUR COUNT FROM THE CONFIG FILE', icon: 'bars', widget: 'weights',
         body: [
           'Each node also carries **reward weight**, which decides how Super Validator rewards are split. Weight and votes are different things: the docs say the Foundation’s node “carries the same voting weight as any other SV.”',
           'We added up the weights in the public configuration file. One node hosts rewards on behalf of dozens of organisations, and a large slice of all weight sits in entries the file itself labels “ghost” or “escrow”: weight promised to big names against milestones not yet met.',
@@ -290,7 +291,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.fund, SRC.cip0082, SRC.fundLaunch],
       },
       {
-        id: 'g4', title: 'How a rule changes', kicker: 'THE CIP PROCESS', icon: 'doc',
+        id: 'g4', film: 'cips', title: 'How a rule changes', kicker: 'THE CIP PROCESS', icon: 'doc',
         body: [
           'Changes go through **Canton Improvement Proposals**. A proposal needs Super Validator backing, then a vote, then it is applied on-chain.',
           'The public index listed **121 proposals** when we counted: 56 final, 44 approved, 8 active, 3 proposed, 3 replaced, 1 obsolete, 5 withdrawn and exactly **1 rejected** (CIP-0033, a request to add a small Super Validator).',
@@ -299,7 +300,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.cipIndex, SRC.cip0000, SRC.cip0033],
       },
       {
-        id: 'g5', title: 'Security desk', kicker: 'AUDITS AND BOUNTIES', icon: 'shield',
+        id: 'g5', film: 'audit', title: 'Security desk', kicker: 'AUDITS AND BOUNTIES', icon: 'shield',
         body: [
           'On 24 November 2026 the Foundation published “Calling All Security Auditors”, a request for quotes from audit firms covering core components.',
           'Two documents give the context. The Foundation’s disclosure policy states: “We do not offer a bug bounty program and compensation requests will not be considered.” And in the Canton Coin MiCA white paper, field H.8, “Audit”, reads **false**.',
@@ -326,7 +327,7 @@ export const STATIONS: Station[] = [
         sources: [SRC.leap, SRC.sft, SRC.rwaNews, SRC.rwa],
       },
       {
-        id: 'h3', title: '“On Canton” means three things', kicker: 'WATCH THE WORDING', icon: 'layers',
+        id: 'h3', film: 'three', title: '“On Canton” means three things', kicker: 'WATCH THE WORDING', icon: 'layers',
         body: [
           '**1. Built with Canton technology.** Several bank platforms use Canton or Daml software on their own private ledgers. That is real adoption of the technology, though it is not activity on the shared public network.',
           '**2. Running on the Global Synchronizer.** These are the apps that can settle with each other atomically. This is the part that makes Canton a network.',

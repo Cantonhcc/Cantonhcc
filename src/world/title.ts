@@ -9,7 +9,7 @@ import { Particles, drawSparkle } from '../engine/particles';
 import { ACCENT, SHARD_COLORS, STAR_COLORS, StationId } from '../art/palette';
 import { BuildingArt, makeBuildings } from '../art/buildings';
 import { glow, vignette } from '../art/glow';
-import { makeBoulder, makeCrystal } from '../art/props';
+import { makeBoulder, makeCrystal, makeShip } from '../art/props';
 import { makeLander, makePlayerSprites, makeRobot } from '../art/sprites';
 import { ui } from '../ui/hud';
 import { paintEarth } from './ground';
@@ -26,6 +26,8 @@ const LINEUP: { id: StationId; dx: number; dy: number }[] = [
   { id: 'library', dx: 270, dy: 22 },
   { id: 'archive', dx: 396, dy: 32 },
 ];
+
+const INTRO = 3.1;
 
 export class Title implements Scene {
   private stars: Star[] = [];
@@ -45,6 +47,10 @@ export class Title implements Scene {
   private starting = false;
   private size = '';
   private age = 0;
+  private ship = makeShip();
+  private intro = 0;          // seconds into the fly-past; the title opens when it ends
+  private introDone = false;
+  private skipIntro = () => { if (!this.introDone) this.intro = Math.max(this.intro, INTRO * 0.82); };
   private mx = 0;
   private my = 0;
   private tx = 0;
@@ -90,20 +96,32 @@ export class Title implements Scene {
   enter() {
     ui.showHud(false);
     ui.showTitle(true);
+    document.getElementById('title')?.classList.toggle('wait', !this.introDone);
     window.addEventListener('pointermove', this.onMove);
+    window.addEventListener('pointerdown', this.skipIntro);
+    window.addEventListener('keydown', this.skipIntro);
   }
   leave() {
     ui.showTitle(false);
     window.removeEventListener('pointermove', this.onMove);
+    window.removeEventListener('pointerdown', this.skipIntro);
+    window.removeEventListener('keydown', this.skipIntro);
   }
 
   /** Called by the Start button. */
   start() {
-    if (this.starting) return;
+    if (this.starting || !this.introDone) return;
     this.starting = true;
     audio.start();
     audio.sfx('enter');
     document.getElementById('title')?.classList.add('leaving');
+  }
+
+  /** Where the arrival ship is on screen during the fly-past. */
+  private shipPos(): [number, number] {
+    const k = Math.min(1, this.intro / (INTRO * 0.92));
+    const e = k * k * (3 - 2 * k) * 0.35 + k * 0.65;
+    return [-100 + e * (G.vw + 230), G.vh * 0.4 + Math.sin(this.intro * 2.4) * 5];
   }
 
   private groundY(): number {
@@ -179,6 +197,21 @@ export class Title implements Scene {
 
   update(dt: number) {
     this.age += dt;
+    if (!this.introDone) {
+      this.intro += dt;
+      // the ship sheds starlight as it crosses
+      const [sx, sy] = this.shipPos();
+      for (let i = 0; i < 4; i++) {
+        this.fxp.add({
+          x: sx - 60 + Math.random() * 10, y: sy + (Math.random() - 0.5) * 14, vx: -40 - Math.random() * 60, vy: (Math.random() - 0.5) * 24,
+          life: 0.5 + Math.random() * 0.9, color: ['#f3ff97', '#875cff', '#ffffff', '#d5a5e3'][(Math.random() * 4) | 0], drag: 0.8, twinkle: true, size: Math.random() < 0.3 ? 2 : 1,
+        });
+      }
+      if (this.intro >= INTRO) {
+        this.introDone = true;
+        document.getElementById('title')?.classList.remove('wait');
+      }
+    }
     const key = Math.ceil(G.vw) + 'x' + Math.ceil(G.vh);
     if (key !== this.size) {
       this.size = key;
@@ -348,10 +381,41 @@ export class Title implements Scene {
     this.fxp.draw(ctx);
 
     if (this.starting) glow(ctx, w / 2, gy, w * (0.3 + wz), '#ffffff', Math.min(1, wz * 0.9));
-    vignette(ctx, w, hgt, 0.6);
-    if (this.age < 1.4) {
-      ctx.fillStyle = `rgba(3,4,26,${1 - this.age / 1.4})`;
-      ctx.fillRect(0, 0, w, hgt);
+    if (!this.introDone) {
+      // the scene is still dark ahead of the ship; it unveils the base as it flies
+      const [sx, sy] = this.shipPos();
+      const edge = sx - 30;
+      const veil = ctx.createLinearGradient(edge - 50, 0, edge + 20, 0);
+      veil.addColorStop(0, 'rgba(3,4,26,0)');
+      veil.addColorStop(1, 'rgba(3,4,26,0.96)');
+      ctx.fillStyle = veil;
+      ctx.fillRect(edge - 50, 0, 70, hgt);
+      ctx.fillStyle = 'rgba(3,4,26,0.96)';
+      ctx.fillRect(edge + 20, 0, w, hgt);
+      for (const s of this.stars) {
+        const x = s.x * w;
+        if (x > edge + 20 && s.z > 0.5) {
+          ctx.globalAlpha = 0.3 + s.z * 0.5;
+          ctx.fillStyle = s.c;
+          ctx.fillRect(Math.floor(x), Math.floor(s.y * hgt), 1, 1);
+        }
+      }
+      ctx.globalAlpha = 1;
+      this.fxp.draw(ctx);
+      const sc = w > 330 ? 2 : 1.5;
+      const sw = this.ship.width * sc;
+      const sh = this.ship.height * sc;
+      glow(ctx, sx - sw * 0.5, sy, 46, '#875cff', 0.9, 20);
+      glow(ctx, sx - sw * 0.46, sy, 22, '#f3ff97', 0.9, 10);
+      glow(ctx, sx, sy, 110, '#875cff', 0.25, 60);
+      ctx.drawImage(this.ship, sx - sw / 2, sy - sh / 2, sw, sh);
+      // exhaust flame flickers
+      const fl = 10 + Math.sin(t * 40) * 4;
+      ctx.fillStyle = '#f3ff97';
+      ctx.fillRect(sx - sw / 2 - fl, sy - 3, fl, 6);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(sx - sw / 2 - fl * 0.5, sy - 1.5, fl * 0.5, 3);
     }
+    vignette(ctx, w, hgt, 0.6);
   }
 }
