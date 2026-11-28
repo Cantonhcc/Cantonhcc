@@ -217,8 +217,8 @@ export class Title implements Scene {
       this.size = key;
       this.buildHill();
     }
-    this.mx += (this.tx - this.mx) * Math.min(1, dt * 3);
-    this.my += (this.ty - this.my) * Math.min(1, dt * 3);
+    this.mx += (this.tx - this.mx) * Math.min(1, dt * 2.2);
+    this.my += (this.ty - this.my) * Math.min(1, dt * 2.2);
     this.shoot -= dt;
     if (this.shoot <= 0 && this.age > 1.5) {
       this.shoot = 1.6 + Math.random() * 3;
@@ -288,14 +288,16 @@ export class Title implements Scene {
       const tw = 0.5 + 0.5 * Math.sin(t * 2 + s.ph);
       ctx.globalAlpha = Math.min(1, 0.25 + s.z * 0.5 + tw * 0.3);
       ctx.fillStyle = s.c;
+      const qx = G.snap(x);
+      const qy = G.snap(y);
       if (this.starting) {
-        ctx.fillRect(Math.floor(x), Math.floor(y), 1, Math.max(1, Math.round(this.warp * 16 * s.z)));
+        ctx.fillRect(qx, qy, 1, Math.max(1, Math.round(this.warp * 16 * s.z)));
       } else {
-        ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
+        ctx.fillRect(qx, qy, 1, 1);
         if (s.z > 0.9) {
           ctx.globalAlpha = 1;
-          glow(ctx, Math.floor(x) + 0.5, Math.floor(y) + 0.5, 5 + tw * 4, s.c, 0.55);
-          if (tw > 0.7) drawSparkle(ctx, Math.floor(x), Math.floor(y), 2, s.c);
+          glow(ctx, qx + 0.5, qy + 0.5, 5 + tw * 4, s.c, 0.55);
+          if (tw > 0.7) drawSparkle(ctx, qx, qy, 2, s.c);
         }
       }
     }
@@ -307,17 +309,18 @@ export class Title implements Scene {
     const ey = hgt * (portrait ? 0.3 : 0.34) - py * 6 - wz * 30 + Math.sin(t * 0.4) * 1.5;
     glow(ctx, ex, ey, 96, '#3f7dff', 0.32);
     glow(ctx, ex - 6, ey - 6, 54, '#9be7ff', 0.3);
-    ctx.drawImage(this.earth, Math.round(ex) - 42, Math.round(ey) - 42);
+    ctx.drawImage(this.earth, G.snap(ex) - 42, G.snap(ey) - 42);
 
     // light behind the horizon
     glow(ctx, w / 2, gy + 4, w * 0.75, '#a26bff', 0.45, 80);
     glow(ctx, w / 2, gy + 10, w * 0.4, '#ff8ad0', 0.22, 46);
-    if (this.ridge) ctx.drawImage(this.ridge, Math.round(-40 - px * 6), Math.round(gy - 34 - py * 2));
+    if (this.ridge) ctx.drawImage(this.ridge, G.snap(-40 - px * 6), G.snap(gy - 34 - py * 2));
     if (this.hill) {
-      const hx = Math.round(-40 - px * 14);
-      const hy = Math.round(gy - 8 - py * 3);
+      const hillW0 = this.hill.width;
+      const baseX = G.snap(w / 2 - px * 14);
+      const hx = baseX - Math.floor(hillW0 / 2);
+      const hy = G.snap(gy - 8 - py * 3);
       ctx.drawImage(this.hill, hx, hy);
-      const baseX = w / 2 - px * 14;
       const baseY = hy + 12;
       const hillW = this.hill.width;
       const curve = (dx: number) => (dx * dx) / (hillW * 2.4);
@@ -331,9 +334,9 @@ export class Title implements Scene {
       const order = [...LINEUP].sort((a, b) => a.dy - b.dy);
       for (const l of order) {
         const a = this.arts[l.id];
-        const x = Math.round(baseX + l.dx);
+        const x = baseX + l.dx;
         if (x < -90 || x > w + 90) continue;
-        const y = Math.round(baseY + l.dy + curve(l.dx));
+        const y = baseY + Math.round(l.dy + curve(l.dx));
         const left = x - a.doorX;
         const top = y - (a.h - 4);
         ctx.fillStyle = 'rgba(20,20,60,0.4)';
@@ -351,8 +354,8 @@ export class Title implements Scene {
         [this.rocks[0], -42, 50, null], [this.rocks[1], 52, 56, null], [this.rocks[2], 222, 52, null],
       ];
       for (const [img, dx, dy, gc] of deco) {
-        const x = Math.round(baseX + dx);
-        const y = Math.round(baseY + dy + curve(dx));
+        const x = baseX + dx;
+        const y = baseY + Math.round(dy + curve(dx));
         if (gc) glow(ctx, x, y - 2, 20, gc, 0.5, 11);
         ctx.drawImage(img, x - Math.floor(img.width / 2), y - img.height + 2);
         if (gc) glow(ctx, x, y - 7, 10, gc, 0.5);
@@ -362,16 +365,16 @@ export class Title implements Scene {
       const lx = baseX + 104;
       ctx.fillStyle = 'rgba(14,15,40,0.4)';
       ctx.fillRect(lx - 20, padY, 40, 3);
-      ctx.drawImage(this.lander, Math.round(lx - 23), Math.round(padY - 40));
+      ctx.drawImage(this.lander, lx - 23, padY - 40);
       glow(ctx, lx + 5, padY - 28, 8, '#ff9d4d', 0.4 + 0.4 * Math.sin(t * 3));
       const hx2 = baseX - 132;
       const bob = Math.sin(t * 2.2) * 2;
       glow(ctx, hx2, padY, 30, '#8fa8ff', 0.25, 12);
       ctx.fillStyle = 'rgba(14,15,40,0.4)';
       ctx.fillRect(hx2 - 5, padY + 5, 10, 2);
-      ctx.drawImage(this.hero, Math.round(hx2 - 9), Math.round(padY - 17));
+      ctx.drawImage(this.hero, hx2 - 9, padY - 17);
       glow(ctx, hx2 + 24, padY, 14, '#4fd1c5', 0.45, 8);
-      ctx.drawImage(this.pip[Math.floor(t * 0.7) % 5 === 0 && (t * 3) % 1 < 0.3 ? 1 : 0], Math.round(hx2 + 16), Math.round(padY - 18 + bob));
+      ctx.drawImage(this.pip[Math.floor(t * 0.7) % 5 === 0 && (t * 3) % 1 < 0.3 ? 1 : 0], hx2 + 16, padY - 18 + G.snap(bob));
     }
 
     // drifting motes and shooting stars glow as they go
@@ -397,7 +400,7 @@ export class Title implements Scene {
         if (x > edge + 20 && s.z > 0.5) {
           ctx.globalAlpha = 0.3 + s.z * 0.5;
           ctx.fillStyle = s.c;
-          ctx.fillRect(Math.floor(x), Math.floor(s.y * hgt), 1, 1);
+          ctx.fillRect(G.snap(x), G.snap(s.y * hgt), 1, 1);
         }
       }
       ctx.globalAlpha = 1;

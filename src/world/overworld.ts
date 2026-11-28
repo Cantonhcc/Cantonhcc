@@ -186,8 +186,8 @@ export class Overworld implements Scene {
   /** Sets up this frame's projection. */
   private frame() {
     const p = this.player;
-    this.fx = this.cut >= 0 ? LANDER.x : p.x;
-    this.fy = this.cut >= 0 ? LANDER.y - 6 : p.y;
+    this.fx = G.snap(this.cut >= 0 ? LANDER.x : p.x);
+    this.fy = G.snap(this.cut >= 0 ? LANDER.y - 6 : p.y);
     this.H0 = Math.round(G.vh * 0.22);
     this.P = Math.round(G.vh * 0.68);
     this.R = this.P - this.H0;
@@ -203,11 +203,11 @@ export class Overworld implements Scene {
     const dx = delta(x - this.fx, MAP_W);
     if (Math.abs(dx) > G.vw / 2 + margin) return false;
     const dy = delta(y - this.fy, MAP_H);
-    this.qx = G.vw / 2 + dx;
+    this.qx = G.snap(G.vw / 2) + dx;
     this.qfar = false;
     if (dy >= 0) {
       if (dy > G.vh - this.P + margin) return false;
-      this.qy = this.P + dy;
+      this.qy = G.snap(this.P + dy);
       this.qs = 1;
       return true;
     }
@@ -225,7 +225,7 @@ export class Overworld implements Scene {
       this.qfar = true;
       w = 1;
     }
-    this.qy += this.sagK * dx * dx * w * w;
+    this.qy = G.snap(this.qy + this.sagK * dx * dx * w * w);
     return true;
   }
 
