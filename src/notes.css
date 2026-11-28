@@ -35,3 +35,18 @@ summary { cursor: pointer; color: var(--dim); font-size: 15px; }
 .tag { font-family: 'Press Start 2P', monospace; font-size: 7px; padding: 3px 5px; color: #15172b; background: var(--good); flex: none; }
 .tag.reported { background: var(--gold); }
 footer { text-align: center; color: var(--dim); margin-top: 40px; }
+
+.byline { font-family: 'Press Start 2P', monospace; font-size: 11px; margin: 4px 0 14px; }
+.byline a { color: #f3ff97; }
+/* exhibit films, same player as in the game */
+.film { margin: 14px 0 18px; background: #0b0d22; border: 3px solid var(--accent); box-shadow: 0 0 0 3px #15172b, 0 0 24px -4px var(--accent); max-width: 640px; }
+.film-head { font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 1.5; padding: 8px 10px; color: var(--accent); background: #12142a; display: flex; gap: 8px; align-items: center; }
+.film-rec { width: 8px; height: 8px; background: #ff6b6b; flex: none; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0.2; } }
+.film-screen { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; aspect-ratio: 2 / 1; }
+.film-caption { min-height: 3.2em; padding: 10px 12px; font-family: 'VT323', monospace; font-size: 22px; line-height: 1.15; background: #12142a; border-top: 3px solid #15172b; text-align: center; display: grid; place-items: center; }
+.film-controls { display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px; background: #12142a; }
+.film-controls .pbtn { font: inherit; font-size: 13px; cursor: pointer; padding: 5px 9px; color: var(--ink); background: #1f2450; border: 3px solid var(--ink); }
+.film-bar { flex: 1; height: 12px; background: #1f2450; border: 3px solid #15172b; cursor: pointer; }
+.film-bar i { display: block; height: 100%; background: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .film-rec { animation: none; } }

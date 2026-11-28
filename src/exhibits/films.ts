@@ -1024,8 +1024,18 @@ export function mountFilm(id: FilmId, accent: string): HTMLElement {
   let playing = true;
   let last = performance.now();
   let lastCaption = '';
+  let visible = true;
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => { visible = entries[entries.length - 1].isIntersecting; }).observe(canvas);
+  }
   const frame = (now: number) => {
     if (!canvas.isConnected) return;
+    if (!visible) {
+      // off screen: keep the clock from jumping, draw nothing
+      last = now;
+      requestAnimationFrame(frame);
+      return;
+    }
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
     if (playing) t = (t + dt) % film.length;
