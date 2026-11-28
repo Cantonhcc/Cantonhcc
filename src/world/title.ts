@@ -243,7 +243,7 @@ export class Title implements Scene {
     if (Math.random() < dt * 8) {
       const a = this.arts.reactor;
       this.fxp.add({
-        x: G.vw / 2 - this.mx * 14 + reactor.dx - a.doorX + 44 + Math.random() * 22, y: gy + reactor.dy + 10 - a.h + 10,
+        x: G.vw / 2 + reactor.dx - a.doorX + 44 + Math.random() * 22, y: gy + reactor.dy + 10 - a.h + 10,
         vx: (Math.random() - 0.5) * 5, vy: -12 - Math.random() * 8, life: 1.4 + Math.random(), color: Math.random() < 0.5 ? '#fb923c' : '#ffd27a', twinkle: true,
       });
     }
@@ -262,8 +262,10 @@ export class Title implements Scene {
     const hgt = G.vh;
     const t = G.time;
     const wz = this.warp * this.warp;
-    const px = this.mx;
-    const py = this.my;
+    // The pixel layers stay put: anything that crawls a pixel at a time reads as a tremble.
+    // Only the soft nebula drifts with the pointer.
+    const px = 0;
+    const py = 0;
     const gy = this.groundY() - wz * hgt * 0.22;
 
     const sky = ctx.createLinearGradient(0, 0, 0, hgt);
@@ -277,11 +279,11 @@ export class Title implements Scene {
 
     ctx.imageSmoothingEnabled = true;
     ctx.globalAlpha = 0.95;
-    ctx.drawImage(this.nebula, -30 - px * 5 + Math.sin(t * 0.05) * 8, -10 - py * 3, w + 60, hgt * 0.86);
+    ctx.drawImage(this.nebula, -30 - this.mx * 6 + Math.sin(t * 0.05) * 8, -10 - this.my * 3, w + 60, hgt * 0.86);
     ctx.globalAlpha = 1;
     ctx.imageSmoothingEnabled = false;
 
-    const speed = this.starting ? 16 + this.warp * 300 : 1.4;
+    const speed = this.starting ? 16 + this.warp * 300 : 0;
     for (const s of this.stars) {
       const y = (((s.y * hgt + t * speed * s.z - py * 6 * s.z) % hgt) + hgt) % hgt;
       const x = (((s.x * w - px * 8 * s.z) % w) + w) % w;
@@ -306,7 +308,7 @@ export class Title implements Scene {
     // the Earth with its halo
     const portrait = hgt > w;
     const ex = w * (portrait ? 0.8 : 0.87) - px * 10;
-    const ey = hgt * (portrait ? 0.3 : 0.34) - py * 6 - wz * 30 + Math.sin(t * 0.4) * 1.5;
+    const ey = hgt * (portrait ? 0.3 : 0.34) - py * 6 - wz * 30;
     glow(ctx, ex, ey, 96, '#3f7dff', 0.32);
     glow(ctx, ex - 6, ey - 6, 54, '#9be7ff', 0.3);
     ctx.drawImage(this.earth, G.snap(ex) - 42, G.snap(ey) - 42);
